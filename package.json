@@ -1,0 +1,32 @@
+{
+  "name": "socketmesh",
+  "version": "1.0.0",
+  "description": "A libraries that utilises socketio to build and manage inter-node communications over sockets with response management",
+  "main": "index.js",
+  "scripts": {
+    "test": "node --experimental-modules ./test/index.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pauliclark/socket-mesh.git"
+  },
+  "keywords": [
+    "node",
+    "socket.io",
+    "mesh",
+    "socket",
+    "response",
+    "callback"
+  ],
+  "author": "Paul I Clark",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/pauliclark/socket-mesh/issues"
+  },
+  "homepage": "https://github.com/pauliclark/socket-mesh#readme",
+  "dependencies": {
+    "http": "0.0.0",
+    "socket.io-client": "^2.2.0",
+    "socketio": "^1.0.0"
+  }
+}
