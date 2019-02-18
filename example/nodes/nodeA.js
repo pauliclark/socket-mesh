@@ -1,15 +1,15 @@
-import {methods} from './methods/nodeA.mjs';
-const nodeA={
+const {methods} = require('./methods/nodeA.js')
+module.exports = {
+    nodeA:{
         "identity":'nodeA',
-        address:[
+        address:
             {
                 host:'localhost',
                 port:'9010'
             }
-        ],
+        ,
         allow:['nodeB'], // undefined = nodeA will be a client | null = nodeA is a server and accepts all clients | array = nodeA will only accept sockets from these client identities
         connect:['nodeC'], // undefined = nodeA will be a client | null = nodeA is a server and accepts all clients | array = nodeA will only accept sockets from these client identities
         methods 
+    }
 }
-export {nodeA}
-export default nodeA

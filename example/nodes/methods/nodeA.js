@@ -1,4 +1,5 @@
-const methods={
+module.exports = {
+    methods:{
         test:{
             allow:null, // allow from any node, otherwise provide an array of whitelisted node idenitifers
             callback:true,
@@ -10,6 +11,5 @@ const methods={
                 }
             }
         }
-    };
-export {methods}
-export default methods
+    }
+};
