@@ -4,6 +4,7 @@
 import {setSecret, encrypt, decrypt} from '../helpers/parser.js'
 import {createServer} from 'http'
 import { Server } from "socket.io"
+import InboundClient from './inboundClient.js'
 import waitFor from '../helpers/waitFor.js'
 class MeshServer {
     constructor({
@@ -37,11 +38,10 @@ class MeshServer {
           data = decrypt(data)
           if (this.allow(data)) {
             this.log.log(`declared as ${data.worker}[${data.variant}]`)
-            this.connections.addClient(data, connection)
+            this.connections.addClient(data, new InboundClient({...data, localWorker:this.worker,schema:this.schema, connection, connections:this.connections, log:this.log}))
+          }else{
+            connection.disconnect()
           }
-        })
-        connection.on("disconnect",() => {
-          this.connections.dropClient(connection)
         })
       })
       httpserver.listen({ port: this.port })

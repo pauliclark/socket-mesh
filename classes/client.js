@@ -1,15 +1,20 @@
 import client from "socket.io-client"
 import {setSecret, encrypt, decrypt} from '../helpers/parser.js'
+import {emitPromise, promiseResponded} from './emitPromise.js'
 export class Client {
-    constructor({log=console,ip,port,worker,variant,identity,schema, privateKey}) {
-        
+    constructor({log=console,ip,port,worker,variant,localWorker, identity,schema, privateKey, socketNode}) {
+        // console.log(`Client created for ${worker}`)
+        // console.log(schema)
         this.log = log
         this.ip = ip
         this.port = port
         this.worker = worker
+        this.localWorker = localWorker
         this.variant = variant
         this.identity = identity
-        this.schema = schema
+        this.commands = schema.getCommands(this.localWorker)
+        // console.log(this.commands)
+        this.socketNode = socketNode
         setSecret(privateKey)
         this.connect()
     }
@@ -45,10 +50,67 @@ export class Client {
         }
       })
       
+      this.socket.on("response",async data => {
+        data = decrypt(data)
+        if (data.uid) {
+          promiseResponded(data)
+        }
+      })
+      this.socket.on("command",async data => {
+        data = decrypt(data)
+        // console.log({commands:this.commands})
+        if (this.commands) {
+          const uid = data.uid
+          delete data.uid
+          if (uid) {
+            const response = {}
+            await Promise.all(Object.keys(data).map(async command => {
+              let method = this.commands[command]
+              // console.log({method})
+              if (typeof method === 'function') {
+                response[command] = await method(data)
+              }else{
+                this.log.error(new Error(`Command ${command} is not defined`))
+                response[command] = `Command ${command} is not defined`
+              }
+            }))
+            this.socket.emit("response",encrypt({
+              uid,
+              ...response
+            }))
+          }else{
+            Object.keys(data).forEach(command => {
+              let method = this.commands[command]
+              // console.log({method})
+              if (typeof method === 'function') {
+                  method(data)
+              }else{
+                this.log.error(new Error(`Command ${command} is not defined`))
+              }
+            })
+          }
+        }
+        this.log.log(data)
+      })
       
       this.socket.on("disconnect",() => {
         this.log.log(`${this.identity.worker} disconnecting from ${address}`)
       })
+    }
+    commandResponse(command,data) {
+      const {uid,promise} = emitPromise()
+      this.log.log(`Emitting ${command} to server`)
+      this.socket.emit('command',encrypt({
+        uid,
+        [command]:data
+      }))
+      return promise
+    }
+    command(command,data) {
+      this.log.log(`Emitting ${command} to server`)
+      this.socket.emit('command',encrypt({
+        [command]:data
+      }))
     }
     declareMyself() {
         this.log.log('declareMyself')

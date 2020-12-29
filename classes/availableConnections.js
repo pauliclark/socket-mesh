@@ -14,10 +14,13 @@ class Connection{
       ip:this.ip,
       port:this.port,
       worker:this.worker,
+      localWorker: this.socketNode.worker,
       variant:this.variant,
+      socketNode: this.socketNode,
       identity:this.socketNode.identity(),
       schema:this.socketNode.schema,
-      privateKey:this.socketNode.privateKey
+      privateKey:this.socketNode.privateKey,
+      log:this.log
     })
   }
   disconnect() {

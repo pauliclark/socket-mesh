@@ -32,17 +32,18 @@ class Connections{
     })
   }
   addClient({worker,variant}, connection) {
+    this.log.log(`Client ${worker} connected to ${this.worker}`)
     this.clients.push({
       worker,variant,connection
     })
   }
   dropClient(connection) {
     for(let i = this.clients.length-1;i>=0;i--) {
-      if (this.clients[i].connection === connection) this.clients.splice(i,1)
+      if (this.clients[i].connection === connection) {
+        this.clients.splice(i,1)
+        connection.disconnect()
+      }
     }
-    this.clients.push({
-      worker,variant,connection
-    })
   }
   add(connection) {
     this.connections.push(connection)
@@ -55,6 +56,10 @@ class Connections{
         toClose.disconnect()
       }
     }
+  }
+  connected(worker) {
+    // console.log(`Finding ${worker} connected to ${this.worker}`)
+    return [...this.clients.filter(client => client.worker === worker).map(client => client.connection)]
   }
 }
 export default Connections

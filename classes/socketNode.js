@@ -23,12 +23,14 @@ class SocketNode {
       this.worker = worker
       this.variant = null
       this.schema = new Schema(schema)
+      // if (worker === 'nodeA') console.log(this.schema.schema.nodeA._commands)
       this.port = port
       this.localPort = localPort
       this.meshPort = meshPort
       this.publicKey = publicKey
       this.privateKey = privateKey
       this.onConnected = onConnected
+      this.buildCommands()
       this.start()
   }
   identity() {
@@ -71,22 +73,25 @@ class SocketNode {
   }
   async startMeshServer() {
     try{
-    this.meshServer = new MeshServer({
-      worker:this.worker, 
-      variant: this.variant,
-      port: this.meshPort, 
-      schema:this.schema,
-      privateKey: this.privateKey,
-      log:this.log,
-      availableConnections:this.managerClient.availableConnections,
-      connections: this.connections
-    })
-  }catch(e) {
-    console.error(e)
-  }
+      this.meshServer = new MeshServer({
+        worker:this.worker, 
+        variant: this.variant,
+        port: this.meshPort, 
+        schema:this.schema,
+        privateKey: this.privateKey,
+        log:this.log,
+        availableConnections:this.managerClient.availableConnections,
+        connections: this.connections
+      })
+    }catch(e) {
+      console.error(e)
+    }
   }
   async openConnections() {
     this.connections.openExisting()
+  }
+  buildCommands() {
+    this.call = this.schema.buildCommands(this)
   }
 }
 export default SocketNode
