@@ -1,23 +1,24 @@
-import Schema from './schema.js'
+import Schema from '../schema.js'
 import md5 from 'md5'
 // import createServer from './httpServer.js'
-import {createServer} from 'http'
-import { Server } from "socket.io"
-import { autoPort } from '../constants/identifiers.js'
+import { createServer } from 'http'
+import { Server } from 'socket.io'
+import { autoPort } from '../../constants/identifiers.js'
 import getPort from 'get-port'
-import { discoveryPort } from '../constants/discoveryPort.js'
-import { setSecret, encrypt, decrypt } from '../helpers/parser.js'
+import { discoveryPort } from '../../constants/discoveryPort.js'
+import { setSecret, encrypt, decrypt } from '../../helpers/parser.js'
 import { contextLog } from '@pauliclark/log-context'
 const connections = {}
-const log = contextLog('socket manager')
+let log
 export class Manager {
-
   constructor ({
+    logLevel,
     schema, // node identifiers and methods
     publicKey, // common key for all nodes but is publicly visible
     privateKey, // common key for all nodes but is NOT publicly visible,
-    port = autoPort, // the port to listen on, will find an available port if not defined
+    port = autoPort // the port to listen on, will find an available port if not defined
   }) {
+    log = contextLog('socket manager'.logLevel)
     if (!schema) throw new Error('The socket manager requires a schema')
     if (!publicKey) throw new Error('The socket manager requires a publicKey')
     if (!privateKey) throw new Error('The socket manager requires a privateKey')
@@ -37,19 +38,21 @@ export class Manager {
     //     })
     // })
   }
-  addNode({ worker, clientId, ip, port }) {
+
+  addNode ({ worker, clientId, ip, port }) {
     // log.log(`added ${worker}[${clientId}]`)
     Object.keys(connections).forEach(conWorker => {
       // log.log(`checking ${conWorker}`)
       Object.keys(connections[conWorker]).forEach(conClientId => {
-        if (clientId !== conClientId && this.schema.allow(conWorker,worker)) {
+        if (clientId !== conClientId && this.schema.allow(conWorker, worker)) {
           // log.log(`${conWorker}[${conClientId}] -> ${worker}[${clientId}]`)
-          connections[conWorker][conClientId].emit("addnode", encrypt([{ worker, variant: clientId, ip, port }]))
+          connections[conWorker][conClientId].emit('addnode', encrypt([{ worker, variant: clientId, ip, port }]))
         }
       })
     })
   }
-  allNodes({worker,variant}) {
+
+  allNodes ({ worker, variant }) {
     const nodes = []
     Object.keys(connections).forEach(conWorker => {
       // console.log('allow check',worker, conWorker)
@@ -70,39 +73,41 @@ export class Manager {
     })
     return nodes
   }
-  tellNodesOfDisconnectedNode(con) {
+
+  tellNodesOfDisconnectedNode (con) {
     const data = JSON.stringify({
       worker: con.worker,
-      variant: con.variant,
+      variant: con.variant
     })
     Object.keys(connections).forEach(conWorker => {
       Object.keys(connections[conWorker]).forEach(conClientId => {
-        connections[conWorker][conClientId].emit("removenode", encrypt(data))
+        connections[conWorker][conClientId].emit('removenode', encrypt(data))
       })
     })
   }
-  sendConnectionsToNewNode(connection) {
+
+  sendConnectionsToNewNode (connection) {
     const cons = this.allNodes(connection)
     // if (connection.worker === 'nodeA') {
     //   log.log(`${connection.worker} just connected`)
     //   log.log(cons)
     // }
-    if (cons.length) connection.emit("addnode", encrypt(cons))
+    if (cons.length) connection.emit('addnode', encrypt(cons))
   }
-  async start(port) {
 
+  async start (port) {
     this.port = (port === autoPort) ? await getPort() : port
     const httpserver = createServer()
     this.server = new Server(httpserver, { port: this.port })
-    this.server.on("connection", (connection) => {
+    this.server.on('connection', (connection) => {
       let worker, clientId
       clientId = connection.client.id
       // console.log(connection.client.id)
 
-      connection.on("declare", data => {
+      connection.on('declare', data => {
         data = decrypt(data)
         worker = data.worker
-        if (!this.schema.validWorker(worker)) return connection.emit("error", encrypt({ message: `${worker} is not defined in the Schema` }))
+        if (!this.schema.validWorker(worker)) return connection.emit('error', encrypt({ message: `${worker} is not defined in the Schema` }))
         // console.log(connection.client.conn.remoteAddress)
         const ip = connection.client.conn.remoteAddress.replace(/^::ffff:/, '')
         const port = data.port
@@ -117,15 +122,15 @@ export class Manager {
           connection.meshIP = ip
 
           // console.log(Object.keys(connections[worker]))
-          connection.emit("declared", encrypt({ worker, clientId, port, ip }))
+          connection.emit('declared', encrypt({ worker, clientId, port, ip }))
           this.sendConnectionsToNewNode(connection)
           this.addNode({ worker, clientId, port, ip })
         } else {
-          connection.emit("declared", { error: 'Worker is not defined' })
+          connection.emit('declared', { error: 'Worker is not defined' })
         }
         // console.log(JSON.parse(data))
       })
-      connection.on("disconnect", () => {
+      connection.on('disconnect', () => {
         if (connections[worker] && connections[worker][clientId]) {
           delete connections[worker][clientId]
           this.tellNodesOfDisconnectedNode(connection)
@@ -143,10 +148,12 @@ export class Manager {
 
     this.listening = true
   }
-  validateKey(publicKey) {
+
+  validateKey (publicKey) {
     return this.hashkey === md5(`${publicKey}${this.privateKey}`)
   }
-  startDiscovery() {
+
+  startDiscovery () {
     // this.discoveryServer = dgram.createSocket('udp4',(msg, info) => {
     //   console.log(msg, info)
     // })
@@ -159,15 +166,19 @@ export class Manager {
           res.writeHead(200, { 'Content-Type': 'application/json' })
           res.end(encrypt({
             port: this.port
-          }));
+          }))
           return
         }
       }
       res.writeHead(401, { 'Content-Type': 'text/html' })
-      res.end('Invalid request');
+      res.end('Invalid request')
     })
     this.discoveryServer.listen({ port: discoveryPort })
     log.info(`Discovery server listening on port ${discoveryPort}`)
+  }
+
+  connections () {
+    return connections
   }
 }
 export default Manager

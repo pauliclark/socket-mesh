@@ -1,12 +1,13 @@
 const methods = async attachMethods => {
-  // console.log({nodeA_attach:attachMethods})
-  const methods = {
-    sampleB:null
+  return {
+    sampleB: {
+      responds: true,
+      method: attachMethods ? (await import('../commands/sampleB.js')).default : null
+    },
+    queued: {
+      queued: true,
+      method: attachMethods ? (await import('../commands/queued.js')).default : null
+    }
   }
-  if (attachMethods) {
-    methods.sampleB = (await import('../commands/sampleB.js')).default
-  }
-  // console.log({methods})
-  return methods
 }
 export default methods
