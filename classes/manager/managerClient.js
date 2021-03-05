@@ -48,7 +48,7 @@ export class ManagerClient {
       // eslint-disable-next-line no-undef
       // process.stdout.write(`Checking ${ips.length} ips` + '\r')
       const ip = ips.pop()
-      console.log({ ip })
+      // console.log({ ip })
       try {
         const address = `${ip}:${discoveryPort}`
         const toSend = {

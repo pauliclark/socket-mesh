@@ -6,7 +6,7 @@ class Balanced {
     this.socketNode = socketNode
     this.log = log
     this.workerCallHistory = []
-    console.log({ worker, command })
+    // console.log({ worker, command })
   }
 
   call (data = {}) {

@@ -9,8 +9,12 @@ class Connections {
     worker,
     variant,
     availableConnections,
-    log = console
+    log = console,
+    onConnection = () => {},
+    onDisconnection = () => {}
   }) {
+    this.onConnection = onConnection
+    this.onDisconnection = onDisconnection
     this.worker = worker
     this.variant = variant
     this.log = log
@@ -52,6 +56,7 @@ class Connections {
   add (connection) {
     this.connections.push(connection)
     connection.connect()
+    this.onConnection(connection)
   }
 
   drop (connection) {
@@ -59,6 +64,7 @@ class Connections {
       if (this.connections[i] === connection) {
         const toClose = this.connections.splice(i, 1)
         toClose.disconnect()
+        this.onDisconnection(toClose)
       }
     }
   }

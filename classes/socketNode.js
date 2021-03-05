@@ -19,7 +19,9 @@ class SocketNode {
     meshPort,
     publicKey,
     privateKey,
-    onConnected = () => { }
+    onConnected = () => { },
+    onConnection = () => { },
+    onDisconnection = () => {}
   }) {
     initialiseQueue(redis)
     this.log = contextLog(worker, logLevel)
@@ -36,6 +38,8 @@ class SocketNode {
     this.publicKey = publicKey
     this.privateKey = privateKey
     this.onConnected = onConnected
+    this.onConnection = onConnection
+    this.onDisconnection = onDisconnection
     this.buildCommands()
     this.start()
   }
@@ -73,7 +77,9 @@ class SocketNode {
           worker: this.worker,
           variant: this.variant,
           availableConnections: this.availableConnections,
-          log: this.log
+          log: this.log,
+          onConnection: this.onConnection,
+          onDisconnection: this.onDisconnection
         })
         this.createMethods()
         this.startMeshServer()

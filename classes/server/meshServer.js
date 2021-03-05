@@ -15,6 +15,7 @@ class MeshServer {
     port,
     privateKey,
     connections,
+    onConnection,
     log = console
   }) {
     // console.log(identity,schema[identity])
@@ -25,6 +26,7 @@ class MeshServer {
     this.schema = schema
     this.port = port
     this.connections = connections
+    this.onConnection = onConnection
     this.listening = false
     setSecret(privateKey)
     this.start()
