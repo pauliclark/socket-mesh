@@ -14,6 +14,8 @@ class SocketNode {
     redis,
     worker,
     localPort,
+    hostname,
+    ip,
     port,
     schema,
     meshPort,
@@ -32,6 +34,7 @@ class SocketNode {
     this.variant = null
     this.schema = new Schema(schema, this.log)
     // if (worker === 'nodeA') console.log(this.schema.schema.nodeA._commands)
+    this.ip = ip
     this.port = port
     this.localPort = localPort
     this.meshPort = meshPort
@@ -62,6 +65,7 @@ class SocketNode {
       jest: this.jest,
       worker: this.worker,
       log: this.log,
+      ip: this.ip,
       port: this.port,
       meshPort: this.meshPort,
       publicKey: this.publicKey,
