@@ -18,7 +18,7 @@ export class Manager {
     privateKey, // common key for all nodes but is NOT publicly visible,
     port = autoPort // the port to listen on, will find an available port if not defined
   }) {
-    log = contextLog('socket manager'.logLevel)
+    log = contextLog('socket manager', logLevel)
     if (!schema) throw new Error('The socket manager requires a schema')
     if (!publicKey) throw new Error('The socket manager requires a publicKey')
     if (!privateKey) throw new Error('The socket manager requires a privateKey')
@@ -136,7 +136,7 @@ export class Manager {
           this.tellNodesOfDisconnectedNode(connection)
           // console.log(Object.keys(connections[worker]))
         }
-        log.log(`disconnected ${worker}`)
+        log.info(`disconnected ${worker}`)
       })
       // connection.on("message",(...args) => {
       //   console.log(args)

@@ -110,6 +110,10 @@ class SocketNode {
     }
   }
 
+  disconnect () {
+    this.managerClient.disconnect()
+  }
+
   async openConnections () {
     this.connections.openExisting()
   }
