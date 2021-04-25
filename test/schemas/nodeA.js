@@ -12,7 +12,6 @@ const schema = async worker => {
       _broadcast
     }
   }
-  // console.log(schema._commands._broadcast)
   return schema
 }
 
