@@ -199,4 +199,7 @@ test('Send broadcast queued message from NodeB to NodeA', async () => {
     }, resolve)
   })
   expect(stubs.queued.mock.calls.length).toBe(1)
+  setTimeout(() => {
+    process.exit()
+  }, 500)
 })
