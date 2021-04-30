@@ -25,6 +25,7 @@ export class ManagerClient {
     setSecret(privateKey)
     this.meshPort = meshPort
     this.onConnected = onConnected
+    this.autoReconnect = true
     this.availableConnections = availableConnections || new AvailableConnections()
     this.worker = worker
     if (!port) {
@@ -34,8 +35,10 @@ export class ManagerClient {
     }
   }
 
-  disconnect () {
+  destroy () {
     if (this.socket) {
+      this.autoReconnect = false
+      this.socket.off()
       this.socket.disconnect()
       this.socket = undefined
     }
@@ -73,6 +76,7 @@ export class ManagerClient {
 
   connect ({ port }) {
     this.log.log(`Connect socket to ${this.remoteIP}:${port}`)
+    this.autoReconnect = false
     this.socket = client(`${this.remoteIP}:${port}`)
 
     this.socket.on('connect', () => { this.declareMyself() })
@@ -101,9 +105,12 @@ export class ManagerClient {
     })
 
     this.socket.on('disconnect', () => {
-      setTimeout(() => {
-        this.discover()
-      }, 2000)
+      // this.log.error(new Error('disconnect'))
+      if (this.autoReconnect) {
+        setTimeout(() => {
+          this.discover()
+        }, 2000)
+      }
     })
   }
 

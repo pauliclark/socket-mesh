@@ -110,11 +110,14 @@ class SocketNode {
     }
   }
 
-  disconnect () {
-    this.managerClient.disconnect()
+  destroy () {
+    this.managerClient.destroy()
+    if (this.meshServer) this.meshServer.destroy()
+    this.connections.destroy()
   }
 
   async openConnections () {
+    this.connections.destroy()
     this.connections.openExisting()
   }
 

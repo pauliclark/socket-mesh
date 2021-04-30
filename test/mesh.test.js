@@ -37,9 +37,13 @@ const createClient = async ({ worker = 'nodeA' }) => {
     })
   })
 }
-let centralNode = null
+const nodes = {
+  nodeB: [],
+  nodeA: [],
+  centralNode: null
+}
 const startManager = async () => {
-  centralNode = new Manager({
+  nodes.centralNode = new Manager({
     schema: await schema(),
     logLevel: levels.ERROR,
     publicKey,
@@ -47,15 +51,11 @@ const startManager = async () => {
     port
   })
 }
-const nodes = {
-  nodeB: [],
-  nodeA: []
-}
 beforeAll(async (done) => {
   startManager()
   await new Promise((resolve, reject) => {
     waitFor(() => {
-      return centralNode && centralNode.listening
+      return nodes.centralNode && nodes.centralNode.listening
     }, resolve)
   })
   log.log('Manager started')
@@ -65,12 +65,15 @@ afterEach(() => {
   jest.clearAllMocks()
 })
 afterAll(() => {
-  while (nodes.nodeA.length) {
-    nodes.nodeA.pop().disconnect()
-  }
-  while (nodes.nodeB.length) {
-    nodes.nodeB.pop().disconnect()
-  }
+  const firstNode = nodes.nodeA[0]
+  nodes.nodeA[0].destroy()
+  nodes.nodeB[1].destroy()
+  nodes.nodeB[0].destroy()
+  nodes.centralNode.destroy()
+  delete nodes.nodeA[0]
+  delete nodes.nodeB[1]
+  delete nodes.nodeB[0]
+  delete nodes.centralNode
 })
 
 test('Create a nodeB worker that registers on the manager', async (done) => {
@@ -128,7 +131,7 @@ test('Check nodeA commands exists for NodeB', async (done) => {
 })
 
 test('Are 3 nodes connected to the Manager', async (done) => {
-  const connections = centralNode.connections()
+  const connections = nodes.centralNode.connections()
   expect(Object.keys(connections.nodeB).length).toBe(2)
   expect(Object.keys(connections.nodeA).length).toBe(1)
   done()

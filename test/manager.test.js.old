@@ -1,0 +1,74 @@
+import { jest } from '@jest/globals'
+import SocketNode from '../classes/socketNode.js'
+import Manager from '../classes/manager/manager.js'
+import waitFor from '../helpers/waitFor.js'
+import schema from './schema.js'
+import { contextLog, levels } from '@pauliclark/log-context'
+import stubs from './methods/commands/stubs'
+const publicKey = 'randomPublicKey'
+const privateKey = 'randomPrivateKey'
+const port = undefined
+
+const log = contextLog('test', levels.ERROR)
+Object.keys(stubs).forEach(stub => {
+  stubs[stub] = jest.fn()
+})
+
+const createClient = async ({ worker = 'nodeA' }) => {
+  const workerSchema = await schema(worker)
+  return new Promise((resolve) => {
+    const node = new SocketNode({
+      // redis: {
+      //   host: '127.0.0.1',
+      //   port: 6379
+      // },
+      logLevel: levels.ERROR,
+      jest: true,
+      worker,
+      schema: workerSchema,
+      publicKey,
+      privateKey,
+      onConnected: () => {
+        waitFor(() => {
+          return !!(node.meshServer && node.meshServer.listening)
+        }, () => { resolve(node) })
+      }
+
+    })
+  })
+}
+const nodes = {
+  nodeB: [],
+  nodeA: [],
+  centralNode: null
+}
+const startManager = async () => {
+  nodes.centralNode = new Manager({
+    schema: await schema(),
+    logLevel: levels.ERROR,
+    publicKey,
+    privateKey,
+    port
+  })
+}
+beforeAll(async (done) => {
+  startManager()
+  await new Promise((resolve, reject) => {
+    waitFor(() => {
+      return nodes.centralNode && nodes.centralNode.listening
+    }, resolve)
+  })
+  log.log('Manager started')
+  done()
+})
+afterEach(() => {
+  jest.clearAllMocks()
+})
+afterAll(() => {
+  nodes.centralNode.destroy()
+  delete nodes.centralNode
+})
+
+test('Manager node destroys', async (done) => {
+  done()
+})

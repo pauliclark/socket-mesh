@@ -57,6 +57,7 @@ class MeshServer {
   allow ({ worker, variant }) {
     return this.schema.allow(worker, this.worker) && variant !== this.variant
   }
+
   // canConnect(identity) {
   //     return (this.schema.local.allow===null || (this.schema.local.allow instanceof Array && this.schema.local.allow.includes(client.identity)))
   // }
@@ -86,5 +87,10 @@ class MeshServer {
   // send({identity,method,payload}) {
   //     // if (this.schema.remotes[identity])
   // }
+  destroy () {
+    this.connections.destroy()
+    this.server.close()
+    this.server.httpServer.close()
+  }
 }
 export default MeshServer

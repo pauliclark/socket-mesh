@@ -48,7 +48,7 @@ class Connections {
     for (let i = this.clients.length - 1; i >= 0; i--) {
       if (this.clients[i].connection === connection) {
         this.clients.splice(i, 1)
-        connection.disconnect()
+        connection.destroy()
       }
     }
   }
@@ -62,8 +62,8 @@ class Connections {
   drop (connection) {
     for (let i = this.connections.length - 1; i >= 0; i--) {
       if (this.connections[i] === connection) {
-        const toClose = this.connections.splice(i, 1)
-        toClose.disconnect()
+        const [toClose] = this.connections.splice(i, 1)
+        toClose.destroy()
         this.onDisconnection(toClose)
       }
     }
@@ -74,6 +74,10 @@ class Connections {
     const clients = [...this.clients, ...this.connections]
     // console.log(clients)
     return [...clients.filter(client => client.worker === worker).map(client => client.client || client.connection || client)]
+  }
+
+  destroy () {
+    while (this.connections.length) this.drop(this.connections[0])
   }
 }
 export default Connections

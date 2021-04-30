@@ -9,7 +9,8 @@
   },
   "scripts": {
     "start": "nodemon ./test/index.js",
-    "test": "NODE_OPTIONS=--experimental-vm-modules npx jest"
+    "test": "NODE_OPTIONS=--experimental-vm-modules node --trace-warnings ./node_modules/.bin/jest",
+    "test:open": "NODE_OPTIONS=--experimental-vm-modules node --trace-warnings --inspect ./node_modules/.bin/jest --detectOpenHandles"
   },
   "repository": {
     "type": "git",

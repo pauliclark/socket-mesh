@@ -34,6 +34,11 @@ export class Client {
     this.command = command
   }
 
+  destroy () {
+    this.socket.off()
+    this.socket.disconnect()
+  }
+
   declareMyself () {
     // this.log.log('declareMyself')
     this.socket.on('declared', data => {

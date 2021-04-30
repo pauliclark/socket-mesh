@@ -98,6 +98,7 @@ export class Manager {
   async start (port) {
     this.port = (port === autoPort) ? await getPort() : port
     const httpserver = createServer()
+    this.httpserver = httpserver
     this.server = new Server(httpserver, { port: this.port })
     this.server.on('connection', (connection) => {
       let worker, clientId
@@ -179,6 +180,22 @@ export class Manager {
 
   connections () {
     return connections
+  }
+
+  destroy () {
+    this.server.close()
+    Object.keys(connections).forEach(worker => {
+      Object.keys(connections[worker]).forEach(clientId => {
+        // connections[worker][clientId].off()
+        // connections[worker][clientId].disconnect()
+        connections[worker][clientId].destroy()
+        delete connections[worker][clientId]
+      })
+      delete connections[worker]
+    })
+    this.server.httpServer.close()
+    // this.httpserver.close()
+    if (this.discoveryServer) this.discoveryServer.close()
   }
 }
 export default Manager
