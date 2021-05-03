@@ -77,7 +77,8 @@ export class ManagerClient {
   connect ({ port }) {
     this.log.log(`Connect socket to ${this.remoteIP}:${port}`)
     this.autoReconnect = true
-    this.socket = client(`${this.remoteIP}:${port}`, { rejectUnauthorized: false, transports: ['websocket'] })
+    const address = `http://${this.remoteIP}:${port}`
+    this.socket = client(address, { rejectUnauthorized: false, transports: ['websocket'] })
 
     this.socket.on('connect', () => { this.declareMyself() })
 
