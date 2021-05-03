@@ -76,7 +76,7 @@ export class ManagerClient {
 
   connect ({ port }) {
     this.log.log(`Connect socket to ${this.remoteIP}:${port}`)
-    this.autoReconnect = false
+    this.autoReconnect = true
     this.socket = client(`${this.remoteIP}:${port}`)
 
     this.socket.on('connect', () => { this.declareMyself() })
@@ -98,18 +98,28 @@ export class ManagerClient {
     })
 
     this.socket.on('error', (data) => {
-      data = decrypt(data)
-      if (data.message) {
+      const decrypted = decrypt(data)
+      if (decrypted.message) {
         this.log.error(new Error(data.message))
       }
     })
 
-    this.socket.on('disconnect', () => {
-      this.log.warn(new Error('disconnect'))
-      if (this.autoReconnect) {
+    this.socket.on('connect_error', (err) => {
+      this.log.error(err)
+    })
+
+    this.socket.on('reconnection_attempt', () => {
+      this.log.debug('Attempting a reconnection')
+    })
+
+    this.socket.on('disconnect', (reason) => {
+      this.log.warn(new Error(`disconnect - ${reason}`))
+      if (!port) {
         setTimeout(() => {
           this.discover()
         }, 2000)
+      } else {
+        this.socket.connect()
       }
     })
   }

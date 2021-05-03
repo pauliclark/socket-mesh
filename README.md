@@ -54,9 +54,8 @@ export default async(worker) => {
         port: 6379
       },
       logLevel: 'trace',
-      managerHost: process.env.MASTER_HOST,
       port: process.env.MASTER_SOCKET_PORT,
-      ip: process.env.MY_POD_IP ||'127.0.0.1',
+      ip: process.env.MASTER_HOST,
       meshPort: process.env.LOCAL_SOCKET_PORT,
       worker,
       schema: workerSchema,
