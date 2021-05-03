@@ -13,7 +13,7 @@ class SocketNode {
     logLevel,
     redis,
     worker,
-    localPort,
+    // localPort,
     hostname,
     ip,
     port,
@@ -36,7 +36,7 @@ class SocketNode {
     // if (worker === 'nodeA') console.log(this.schema.schema.nodeA._commands)
     this.ip = ip
     this.port = port
-    this.localPort = localPort
+    // this.localPort = localPort
     this.meshPort = meshPort
     this.publicKey = publicKey
     this.privateKey = privateKey

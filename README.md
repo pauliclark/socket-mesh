@@ -57,6 +57,7 @@ export default async(worker) => {
       managerHost: process.env.MASTER_HOST,
       port: process.env.MASTER_SOCKET_PORT,
       ip: process.env.MY_POD_IP ||'127.0.0.1',
+      meshPort: process.env.LOCAL_SOCKET_PORT,
       worker,
       schema: workerSchema,
       publicKey,

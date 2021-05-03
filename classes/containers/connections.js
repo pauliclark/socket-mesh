@@ -53,6 +53,15 @@ class Connections {
     }
   }
 
+  list () {
+    const workers = {}
+    this.clients.forEach(client => {
+      if (!workers[client.worker]) workers[client.worker] = {}
+      workers[client.worker][client.variant] = client
+    })
+    return workers
+  }
+
   add (connection) {
     this.connections.push(connection)
     connection.connect()

@@ -16,7 +16,9 @@ export class Manager {
     schema, // node identifiers and methods
     publicKey, // common key for all nodes but is publicly visible
     privateKey, // common key for all nodes but is NOT publicly visible,
-    port = autoPort // the port to listen on, will find an available port if not defined
+    port = autoPort, // the port to listen on, will find an available port if not defined,
+    onConnection = () => {},
+    onDeclare = () => {}
   }) {
     log = contextLog('socket manager', logLevel)
     if (!schema) throw new Error('The socket manager requires a schema')
@@ -25,6 +27,8 @@ export class Manager {
     this.listening = false
     this.schema = new Schema(schema)
     this.privateKey = privateKey
+    this.onConnection = onConnection
+    this.onDeclare = onDeclare
     setSecret(privateKey)
     this.hashkey = md5(`${publicKey}${privateKey}`)
     this.start(port)
@@ -101,12 +105,15 @@ export class Manager {
     this.httpserver = httpserver
     this.server = new Server(httpserver, { port: this.port })
     this.server.on('connection', (connection) => {
-      let worker, clientId
-      clientId = connection.client.id
+      let worker
+      const clientId = connection.client.id
+      if (this.onConnection) this.onConnection(connection)
       // console.log(connection.client.id)
 
       connection.on('declare', data => {
         data = decrypt(data)
+
+        if (this.onDeclare) this.onDeclare(data)
         worker = data.worker
         if (!this.schema.validWorker(worker)) return connection.emit('error', encrypt({ message: `${worker} is not defined in the Schema` }))
         // console.log(connection.client.conn.remoteAddress)
