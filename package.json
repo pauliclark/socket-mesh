@@ -1,6 +1,6 @@
 {
   "name": "socketmesh",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "A libraries that utilises socketio to build and manage inter-node communications over sockets with response management",
   "main": "index.js",
   "type": "module",
