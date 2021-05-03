@@ -105,7 +105,7 @@ export class ManagerClient {
     })
 
     this.socket.on('disconnect', () => {
-      // this.log.error(new Error('disconnect'))
+      this.log.warn(new Error('disconnect'))
       if (this.autoReconnect) {
         setTimeout(() => {
           this.discover()
@@ -115,7 +115,7 @@ export class ManagerClient {
   }
 
   declareMyself () {
-    // this.log.log(`Declaring myself as ${this.worker}`)
+    this.log.log(`Declaring myself as ${this.worker}`)
     this.socket.on('declared', data => {
       this.declared(decrypt(data))
     })
@@ -123,7 +123,7 @@ export class ManagerClient {
   }
 
   declared ({ worker, clientId }) {
-    // this.log.log({declared:{worker, clientId}})
+    this.log.log({ declared: { worker, clientId } })
     this.onConnected({ worker, clientId })
   }
 }
