@@ -22,7 +22,7 @@ export class Client {
 
   connect () {
     const address = `http://${this.ip}:${this.port}`
-    this.socket = client(address)
+    this.socket = client(address, { transports: ['websocket'] })
 
     this.log.log(`${this.identity.worker} connecting to ${address}`)
     this.socket.on('connect', () => {
