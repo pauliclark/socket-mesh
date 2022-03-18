@@ -1,6 +1,6 @@
 {
   "name": "socketmesh",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "A libraries that utilises socketio to build and manage inter-node communications over sockets with response management",
   "main": "index.js",
   "type": "module",
@@ -32,10 +32,8 @@
   "homepage": "https://github.com/pauliclark/socket-mesh#readme",
   "dependencies": {
     "@pauliclark/log-context": "^0.1.2",
-    "axios": "^0.21.1",
     "cryptr": "^6.0.2",
     "get-port": "^5.1.1",
-    "http": "0.0.0",
     "md5": "^2.3.0",
     "redis": "^3.1.1",
     "rsmq": "^0.12.2",
@@ -56,5 +54,8 @@
   },
   "jest": {
     "testURL": "http://127.0.0.1"
+  },
+  "_moduleAliases": {
+    "axios": "https://esm.sh/axios@0.25.0"
   }
 }
