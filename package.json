@@ -32,6 +32,7 @@
   "homepage": "https://github.com/pauliclark/socket-mesh#readme",
   "dependencies": {
     "@pauliclark/log-context": "^0.1.2",
+    "axios": "^0.26.1",
     "cryptr": "^6.0.2",
     "get-port": "^5.1.1",
     "md5": "^2.3.0",
