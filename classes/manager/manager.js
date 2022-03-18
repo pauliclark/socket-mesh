@@ -11,14 +11,14 @@ import { contextLog } from '@pauliclark/log-context'
 const connections = {}
 let log
 export class Manager {
-  constructor ({
+  constructor({
     logLevel,
     schema, // node identifiers and methods
     publicKey, // common key for all nodes but is publicly visible
     privateKey, // common key for all nodes but is NOT publicly visible,
     port = autoPort, // the port to listen on, will find an available port if not defined,
-    onConnection = () => {},
-    onDeclare = () => {}
+    onConnection = () => { },
+    onDeclare = () => { }
   }) {
     log = contextLog('socket manager', logLevel)
     if (!schema) throw new Error('The socket manager requires a schema')
@@ -43,7 +43,7 @@ export class Manager {
     // })
   }
 
-  addNode ({ worker, clientId, ip, port }) {
+  addNode({ worker, clientId, ip, port }) {
     // log.log(`added ${worker}[${clientId}]`)
     Object.keys(connections).forEach(conWorker => {
       // log.log(`checking ${conWorker}`)
@@ -56,7 +56,7 @@ export class Manager {
     })
   }
 
-  allNodes ({ worker, variant }) {
+  allNodes({ worker, variant }) {
     const nodes = []
     Object.keys(connections).forEach(conWorker => {
       // console.log('allow check',worker, conWorker)
@@ -78,7 +78,7 @@ export class Manager {
     return nodes
   }
 
-  tellNodesOfDisconnectedNode (con) {
+  tellNodesOfDisconnectedNode(con) {
     const data = JSON.stringify({
       worker: con.worker,
       variant: con.variant
@@ -90,7 +90,7 @@ export class Manager {
     })
   }
 
-  sendConnectionsToNewNode (connection) {
+  sendConnectionsToNewNode(connection) {
     const cons = this.allNodes(connection)
     // if (connection.worker === 'nodeA') {
     //   log.log(`${connection.worker} just connected`)
@@ -99,7 +99,7 @@ export class Manager {
     if (cons.length) connection.emit('addnode', encrypt(cons))
   }
 
-  async start (port) {
+  async start(port) {
     this.port = (port === autoPort) ? await getPort() : port
     const httpserver = createServer()
     this.httpserver = httpserver
@@ -117,7 +117,7 @@ export class Manager {
         worker = data.worker
         if (!this.schema.validWorker(worker)) return connection.emit('error', encrypt({ message: `${worker} is not defined in the Schema` }))
         // console.log(connection.client.conn.remoteAddress)
-        const ip = connection.client.conn.remoteAddress.replace(/^::ffff:/, '')
+        const ip = data.hostname || connection.client.conn.remoteAddress.replace(/^::ffff:/, '')
         const port = data.port
         // console.log({worker})
         if (worker) {
@@ -157,11 +157,11 @@ export class Manager {
     this.listening = true
   }
 
-  validateKey (publicKey) {
+  validateKey(publicKey) {
     return this.hashkey === md5(`${publicKey}${this.privateKey}`)
   }
 
-  startDiscovery () {
+  startDiscovery() {
     // this.discoveryServer = dgram.createSocket('udp4',(msg, info) => {
     //   console.log(msg, info)
     // })
@@ -185,11 +185,11 @@ export class Manager {
     log.info(`Discovery server listening on port ${discoveryPort}`)
   }
 
-  connections () {
+  connections() {
     return connections
   }
 
-  destroy () {
+  destroy() {
     this.server.close()
     Object.keys(connections).forEach(worker => {
       Object.keys(connections[worker]).forEach(clientId => {

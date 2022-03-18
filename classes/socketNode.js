@@ -8,7 +8,7 @@ import AvailableConnections from './containers/availableConnections.js'
 import { contextLog } from '@pauliclark/log-context'
 import { initialiseQueue } from './containers/queues.js'
 class SocketNode {
-  constructor ({
+  constructor({
     jest = false,
     logLevel,
     redis,
@@ -23,7 +23,7 @@ class SocketNode {
     privateKey,
     onConnected = () => { },
     onConnection = () => { },
-    onDisconnection = () => {}
+    onDisconnection = () => { }
   }) {
     initialiseQueue(redis)
     this.log = contextLog(worker, logLevel)
@@ -33,8 +33,9 @@ class SocketNode {
     this.worker = worker
     this.variant = null
     this.schema = new Schema(schema, this.log)
-    // if (worker === 'nodeA') console.log(this.schema.schema.nodeA._commands)
-    this.ip = hostname || ip
+    // console.log({ worker, hostname })
+    this.hostname = hostname
+    this.ip = ip
     this.port = port
     // this.localPort = localPort
     this.meshPort = meshPort
@@ -47,25 +48,27 @@ class SocketNode {
     this.start()
   }
 
-  identity () {
+  identity() {
     return {
       worker: this.worker,
       variant: this.variant
     }
   }
 
-  async start () {
+  async start() {
     this.meshPort = this.meshPort || await getPort()
     this.connectToManager()
   }
 
-  async connectToManager () {
+  async connectToManager() {
     // Notify the manager that I am listening
+    // console.log(`Telling manager I'm at ${this.hostname}`)
     this.managerClient = new ManagerClient({
       jest: this.jest,
       worker: this.worker,
       log: this.log,
       ip: this.ip,
+      hostname: this.hostname,
       port: this.port,
       meshPort: this.meshPort,
       publicKey: this.publicKey,
@@ -92,7 +95,7 @@ class SocketNode {
     })
   }
 
-  async startMeshServer () {
+  async startMeshServer() {
     try {
       this.meshServer = new MeshServer({
         methods: this.methods,
@@ -110,22 +113,22 @@ class SocketNode {
     }
   }
 
-  destroy () {
+  destroy() {
     this.managerClient.destroy()
     if (this.meshServer) this.meshServer.destroy()
     this.connections.destroy()
   }
 
-  async openConnections () {
+  async openConnections() {
     this.connections.destroy()
     this.connections.openExisting()
   }
 
-  buildCommands () {
+  buildCommands() {
     this.call = this.schema.buildCommands(this)
   }
 
-  createMethods () {
+  createMethods() {
     this.methods = this.schema.getMethods(this)
   }
 }

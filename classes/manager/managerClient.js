@@ -6,22 +6,24 @@ import axios from 'axios'
 import http from 'axios/lib/adapters/http.js'
 import { discoveryPort } from '../../constants/discoveryPort.js'
 export class ManagerClient {
-  constructor ({
+  constructor({
     jest = false,
     ip = 'http://127.0.0.1',
     worker = 'unnamed',
+    hostname,
     port,
     publicKey,
     privateKey,
     meshPort,
     availableConnections,
-    onConnected = () => {},
+    onConnected = () => { },
     log = console
   } = { ip: 'http://127.0.0.1', publicKey: 'not defined' }) {
     this.jest = jest // adjust adapter for jest environment
     this.log = log
     this.publicKey = publicKey
     this.remoteIP = ip
+    this.hostname = hostname
     setSecret(privateKey)
     this.meshPort = meshPort
     this.onConnected = onConnected
@@ -35,7 +37,7 @@ export class ManagerClient {
     }
   }
 
-  destroy () {
+  destroy() {
     if (this.socket) {
       this.autoReconnect = false
       this.socket.off()
@@ -44,7 +46,7 @@ export class ManagerClient {
     }
   }
 
-  async discover () {
+  async discover() {
     const ips = [this.remoteIP]
     let success = false
     while (!success && ips.length) {
@@ -74,7 +76,7 @@ export class ManagerClient {
     // if (!success) throw new Error('Cannot discover the socket manager')
   }
 
-  connect ({ port }) {
+  connect({ port }) {
     this.log.log(`Connect socket to ${this.remoteIP}:${port}`)
     this.autoReconnect = true
     this.socket = client(`${this.remoteIP}:${port}`, { rejectUnauthorized: false, transports: ['websocket'] })
@@ -124,15 +126,15 @@ export class ManagerClient {
     })
   }
 
-  declareMyself () {
+  declareMyself() {
     this.log.log(`Declaring myself as ${this.worker}`)
     this.socket.on('declared', data => {
       this.declared(decrypt(data))
     })
-    this.socket.emit('declare', encrypt({ worker: this.worker, port: this.meshPort }))
+    this.socket.emit('declare', encrypt({ worker: this.worker, port: this.meshPort, hostname: this.hostname }))
   }
 
-  declared ({ worker, clientId }) {
+  declared({ worker, clientId }) {
     this.log.log({ declared: { worker, clientId } })
     this.onConnected({ worker, clientId })
   }
