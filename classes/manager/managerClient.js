@@ -11,6 +11,7 @@ export class ManagerClient {
     managerIp,
     ip = 'http://127.0.0.1',
     worker = 'unnamed',
+    hostname,
     port,
     publicKey,
     privateKey,
@@ -24,6 +25,7 @@ export class ManagerClient {
     this.publicKey = publicKey
     this.managerIp = managerIp
     this.remoteIP = ip
+    this.hostname = hostname
     setSecret(privateKey)
     this.meshPort = meshPort
     this.onConnected = onConnected
@@ -135,7 +137,7 @@ export class ManagerClient {
     this.socket.on('declared', data => {
       this.declared(decrypt(data))
     })
-    this.socket.emit('declare', encrypt({ worker: this.worker, port: this.meshPort }))
+    this.socket.emit('declare', encrypt({ worker: this.worker, port: this.meshPort, hostname: this.hostname }))
   }
 
   declared({ worker, clientId }) {
