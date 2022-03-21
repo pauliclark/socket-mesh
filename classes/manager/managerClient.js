@@ -6,8 +6,9 @@ import axios from 'axios'
 import http from 'axios/lib/adapters/http.js'
 import { discoveryPort } from '../../constants/discoveryPort.js'
 export class ManagerClient {
-  constructor ({
+  constructor({
     jest = false,
+    managerIp,
     ip = 'http://127.0.0.1',
     worker = 'unnamed',
     port,
@@ -15,12 +16,13 @@ export class ManagerClient {
     privateKey,
     meshPort,
     availableConnections,
-    onConnected = () => {},
+    onConnected = () => { },
     log = console
   } = { ip: 'http://127.0.0.1', publicKey: 'not defined' }) {
     this.jest = jest // adjust adapter for jest environment
     this.log = log
     this.publicKey = publicKey
+    this.managerIp = managerIp
     this.remoteIP = ip
     setSecret(privateKey)
     this.meshPort = meshPort
@@ -35,7 +37,7 @@ export class ManagerClient {
     }
   }
 
-  destroy () {
+  destroy() {
     if (this.socket) {
       this.autoReconnect = false
       this.socket.off()
@@ -44,8 +46,8 @@ export class ManagerClient {
     }
   }
 
-  async discover () {
-    const ips = [this.remoteIP]
+  async discover() {
+    const ips = [this.managerIp]
     let success = false
     while (!success && ips.length) {
       // eslint-disable-next-line no-undef
@@ -74,57 +76,61 @@ export class ManagerClient {
     // if (!success) throw new Error('Cannot discover the socket manager')
   }
 
-  connect ({ port }) {
-    this.log.log(`Connect socket to ${this.remoteIP}:${port}`)
-    this.autoReconnect = true
-    this.socket = client(`${this.remoteIP}:${port}`, { rejectUnauthorized: false, transports: ['websocket'] })
+  connect({ port }) {
+    this.log.log(`Connect socket to ${this.managerIp}:${port}`)
+    try {
+      this.autoReconnect = true
+      this.socket = client(`${this.managerIp}:${port}`, { rejectUnauthorized: false, transports: ['websocket'] })
 
-    this.socket.on('connect', () => { this.declareMyself() })
+      this.socket.on('connect', () => { this.declareMyself() })
 
-    this.socket.on('addnode', (data) => {
-      data = decrypt(data)
-      // if (this.worker === 'nodeA') this.log.info(data)
-      // console.log({addnode:data})
-      data.forEach(connection => {
-        this.availableConnections.addConnection(connection)
+      this.socket.on('addnode', (data) => {
+        data = decrypt(data)
+        // if (this.worker === 'nodeA') this.log.info(data)
+        // console.log({addnode:data})
+        data.forEach(connection => {
+          this.availableConnections.addConnection(connection)
+        })
+        // console.log(availableConnections)
       })
-      // console.log(availableConnections)
-    })
 
-    this.socket.on('removenode', (data) => {
-      data = decrypt(data)
-      this.availableConnections.dropConnection(data)
-      // console.log(availableConnections)
-    })
+      this.socket.on('removenode', (data) => {
+        data = decrypt(data)
+        this.availableConnections.dropConnection(data)
+        // console.log(availableConnections)
+      })
 
-    this.socket.on('error', (data) => {
-      const decrypted = decrypt(data)
-      if (decrypted.message) {
-        this.log.error(new Error(data.message))
-      }
-    })
+      this.socket.on('error', (data) => {
+        const decrypted = decrypt(data)
+        if (decrypted.message) {
+          this.log.error(new Error(data.message))
+        }
+      })
 
-    this.socket.on('connect_error', (err) => {
-      this.log.error(err)
-    })
+      this.socket.on('connect_error', (err) => {
+        this.log.error(err)
+      })
 
-    this.socket.on('reconnection_attempt', () => {
-      this.log.debug('Attempting a reconnection')
-    })
+      this.socket.on('reconnection_attempt', () => {
+        this.log.debug('Attempting a reconnection')
+      })
 
-    this.socket.on('disconnect', (reason) => {
-      this.log.warn(new Error(`disconnect - ${reason}`))
-      if (!port) {
-        setTimeout(() => {
-          this.discover()
-        }, 2000)
-      } else {
-        this.socket.connect()
-      }
-    })
+      this.socket.on('disconnect', (reason) => {
+        this.log.warn(new Error(`disconnect - ${reason}`))
+        if (!port) {
+          setTimeout(() => {
+            this.discover()
+          }, 2000)
+        } else {
+          this.socket.connect()
+        }
+      })
+    } catch (e) {
+      console.error(e.message)
+    }
   }
 
-  declareMyself () {
+  declareMyself() {
     this.log.log(`Declaring myself as ${this.worker}`)
     this.socket.on('declared', data => {
       this.declared(decrypt(data))
@@ -132,7 +138,7 @@ export class ManagerClient {
     this.socket.emit('declare', encrypt({ worker: this.worker, port: this.meshPort }))
   }
 
-  declared ({ worker, clientId }) {
+  declared({ worker, clientId }) {
     this.log.log({ declared: { worker, clientId } })
     this.onConnected({ worker, clientId })
   }
