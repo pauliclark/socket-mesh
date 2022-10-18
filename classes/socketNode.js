@@ -14,7 +14,7 @@ class SocketNode {
     redis,
     worker,
     // localPort,
-    managerIp = 'manager',
+    managerIp = 'http://127.0.0.1',
     hostname,
     ip,
     port,

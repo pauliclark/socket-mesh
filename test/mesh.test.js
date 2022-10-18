@@ -1,4 +1,4 @@
-import { jest } from '@jest/globals'
+import { jest, beforeAll, afterEach, afterAll, expect, test } from '@jest/globals'
 import SocketNode from '../classes/socketNode.js'
 import Manager from '../classes/manager/manager.js'
 import waitFor from '../helpers/waitFor.js'
@@ -14,7 +14,7 @@ Object.keys(stubs).forEach(stub => {
   stubs[stub] = jest.fn()
 })
 
-const createClient = async ({ worker = 'nodeA' }) => {
+const createClient = async ({ worker = 'nodeA' } = { worker: 'nodeA' }) => {
   const workerSchema = await schema(worker)
   return new Promise((resolve) => {
     const node = new SocketNode({
@@ -65,7 +65,7 @@ afterEach(() => {
   jest.clearAllMocks()
 })
 afterAll(() => {
-  const firstNode = nodes.nodeA[0]
+  // const firstNode = nodes.nodeA[0]
   nodes.nodeA[0].destroy()
   nodes.nodeB[1].destroy()
   nodes.nodeB[0].destroy()
