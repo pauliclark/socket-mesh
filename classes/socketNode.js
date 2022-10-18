@@ -34,7 +34,7 @@ class SocketNode {
     this.worker = worker
     this.variant = null
     this.schema = new Schema(schema, this.log)
-    console.log({ worker, hostname, managerIp })
+    // console.log({ worker, hostname, managerIp })
     this.managerIp = managerIp
     this.ip = hostname || ip
     this.port = port
