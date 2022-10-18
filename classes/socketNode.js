@@ -8,12 +8,13 @@ import AvailableConnections from './containers/availableConnections.js'
 import { contextLog } from '@pauliclark/log-context'
 import { initialiseQueue } from './containers/queues.js'
 class SocketNode {
-  constructor ({
+  constructor({
     jest = false,
     logLevel,
     redis,
     worker,
     // localPort,
+    managerIp = 'manager',
     hostname,
     ip,
     port,
@@ -23,7 +24,7 @@ class SocketNode {
     privateKey,
     onConnected = () => { },
     onConnection = () => { },
-    onDisconnection = () => {}
+    onDisconnection = () => { }
   }) {
     initialiseQueue(redis)
     this.log = contextLog(worker, logLevel)
@@ -33,7 +34,8 @@ class SocketNode {
     this.worker = worker
     this.variant = null
     this.schema = new Schema(schema, this.log)
-    // if (worker === 'nodeA') console.log(this.schema.schema.nodeA._commands)
+    console.log({ worker, hostname, managerIp })
+    this.managerIp = managerIp
     this.ip = hostname || ip
     this.port = port
     // this.localPort = localPort
@@ -47,30 +49,34 @@ class SocketNode {
     this.start()
   }
 
-  identity () {
+  identity() {
     return {
       worker: this.worker,
       variant: this.variant
     }
   }
 
-  async start () {
+  async start() {
     this.meshPort = this.meshPort || await getPort()
     this.connectToManager()
   }
 
-  async connectToManager () {
+  async connectToManager() {
     // Notify the manager that I am listening
+    // console.log(this)
+    // return
     this.managerClient = new ManagerClient({
-      jest: this.jest,
-      worker: this.worker,
-      log: this.log,
-      ip: this.ip,
-      port: this.port,
-      meshPort: this.meshPort,
-      publicKey: this.publicKey,
-      privateKey: this.privateKey,
-      availableConnections: this.availableConnections,
+      ...this,
+      // jest: this.jest,
+      // worker: this.worker,
+      // log: this.log,
+      // managerIp: this.managerIp,
+      // ip: this.ip,
+      // port: this.port,
+      // meshPort: this.meshPort,
+      // publicKey: this.publicKey,
+      // privateKey: this.privateKey,
+      // availableConnections: this.availableConnections,
       onConnected: ({ worker, clientId }) => {
         this.variant = clientId
         // this.log.debug({worker, clientId})
@@ -92,40 +98,41 @@ class SocketNode {
     })
   }
 
-  async startMeshServer () {
+  async startMeshServer() {
     try {
       this.meshServer = new MeshServer({
-        methods: this.methods,
-        worker: this.worker,
-        variant: this.variant,
+        ...this,
+        // methods: this.methods,
+        // worker: this.worker,
+        // variant: this.variant,
         port: this.meshPort,
-        schema: this.schema,
-        privateKey: this.privateKey,
-        log: this.log,
-        availableConnections: this.managerClient.availableConnections,
-        connections: this.connections
+        // schema: this.schema,
+        // privateKey: this.privateKey,
+        // log: this.log,
+        availableConnections: this.managerClient.availableConnections
+        // connections: this.connections
       })
     } catch (e) {
       console.error(e)
     }
   }
 
-  destroy () {
+  destroy() {
     this.managerClient.destroy()
     if (this.meshServer) this.meshServer.destroy()
     this.connections.destroy()
   }
 
-  async openConnections () {
+  async openConnections() {
     this.connections.destroy()
     this.connections.openExisting()
   }
 
-  buildCommands () {
+  buildCommands() {
     this.call = this.schema.buildCommands(this)
   }
 
-  createMethods () {
+  createMethods() {
     this.methods = this.schema.getMethods(this)
   }
 }
