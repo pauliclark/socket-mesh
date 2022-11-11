@@ -29,14 +29,18 @@ export class Client {
       this.log.log(this.identity)
       this.declareMyself()
     })
+    this.socket.on('error', (e) => {
+      this.log.log(e)
+    })
     const { commandResponse, command } = socketMethods(this.socket, this.methods, this.commands, { log: this.log })
     this.commandResponse = commandResponse
     this.command = command
   }
 
   destroy () {
-    this.socket.off()
-    this.socket.disconnect()
+    console.log({destroying:this})
+    this.socket.client.close()
+    // this.socket.disconnect()
   }
 
   declareMyself () {

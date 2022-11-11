@@ -76,7 +76,7 @@ const socketMethods = (socket, methods, commands, { log = console, connections }
   })
 
   const commandResponse = (command, data) => {
-    const { uid, promise } = emitPromise()
+    const { uid, promise } = emitPromise({socket,command})
     // log.log(`Emitting ${command} from server and awaiting response`, data)
     socket.emit('command', encrypt({
       uid,

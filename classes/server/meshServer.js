@@ -34,24 +34,31 @@ class MeshServer {
 
   start () {
     const httpserver = createServer()
-    this.server = new Server(httpserver, { port: this.port })
-    this.log.log(`${this.worker} Mesh server listening on ${this.port}`)
+    try{
+      this.server = new Server(httpserver, { port: this.port })
+      this.log.log(`${this.worker} Mesh server listening on ${this.port}`)
 
-    // if (this.worker ==='nodeA') console.log(this.server)
-    this.server.on('connection', connection => {
-      this.log.log('Incoming connection')
-      connection.on('declare', data => {
-        data = decrypt(data)
-        if (this.allow(data)) {
-          this.log.log(`declared as ${data.worker}[${data.variant}]`)
-          this.connections.addClient(data, new InboundClient({ ...data, localWorker: this.worker, methods: this.methods, schema: this.schema, connection, connections: this.connections, log: this.log }))
-        } else {
-          connection.disconnect()
-        }
+      // if (this.worker ==='nodeA') console.log(this.server)
+      this.server.on('connection', connection => {
+        this.log.log('Incoming connection')
+        connection.on('declare', data => {
+          data = decrypt(data)
+          if (this.allow(data)) {
+            this.log.log(`declared as ${data.worker}[${data.variant}]`)
+            this.connections.addClient(data, new InboundClient({ ...data, localWorker: this.worker, methods: this.methods, schema: this.schema, connection, connections: this.connections, log: this.log }))
+          } else {
+            connection.disconnect()
+          }
+        })
       })
-    })
-    httpserver.listen({ port: this.port })
-    this.listening = true
+      httpserver.listen({ port: this.port })
+      this.listening = true
+    } catch (e) {
+      this.log.error(`${this.worker} failed to start the Mesh server listening on ${this.port},  will try again in 1s`)
+      setTimeout(() => {
+        this.start()
+      },1000)
+    }
   }
 
   allow ({ worker, variant }) {

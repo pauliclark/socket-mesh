@@ -85,6 +85,7 @@ export class Manager {
     })
     Object.keys(connections).forEach(conWorker => {
       Object.keys(connections[conWorker]).forEach(conClientId => {
+        log.info(`Disconnect ${conWorker} ${conClientId}`)
         connections[conWorker][conClientId].emit('removenode', encrypt(data))
       })
     })
@@ -93,7 +94,7 @@ export class Manager {
   sendConnectionsToNewNode(connection) {
     const cons = this.allNodes(connection)
     // if (connection.worker === 'nodeA') {
-    //   log.log(`${connection.worker} just connected`)
+      log.log(`${connection.worker} just connected`)
     //   log.log(cons)
     // }
     if (cons.length) connection.emit('addnode', encrypt(cons))
@@ -144,7 +145,7 @@ export class Manager {
           this.tellNodesOfDisconnectedNode(connection)
           // console.log(Object.keys(connections[worker]))
         }
-        log.info(`disconnected ${worker}`)
+          log.info(`disconnected ${worker} ${clientId}`)
       })
       // connection.on("message",(...args) => {
       //   console.log(args)
