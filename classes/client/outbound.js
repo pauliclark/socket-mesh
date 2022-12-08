@@ -38,9 +38,9 @@ export class Client {
   }
 
   destroy () {
-    console.log({destroying:this})
-    this.socket.client.close()
-    // this.socket.disconnect()
+    // console.log({ destroying: this.worker })
+    if (this.socket.client) this.socket.client.close()
+    this.socket.disconnect()
   }
 
   declareMyself () {
