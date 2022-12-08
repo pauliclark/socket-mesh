@@ -69,13 +69,19 @@ class Connections {
   }
 
   drop (connection) {
-    for (let i = this.connections.length - 1; i >= 0; i--) {
-      if (this.connections[i] === connection) {
-        const [toClose] = this.connections.splice(i, 1)
-        toClose.destroy()
-        this.onDisconnection(toClose)
-      }
+    const toClose = this.connections.find(c => c === connection)
+    if (toClose) {
+      toClose.destroy()
+      this.connections = this.connections.filter(con => con !== toClose)
+      this.onDisconnection(toClose)
     }
+    // for (let i = this.connections.length - 1; i >= 0; i--) {
+    //   if (this.connections[i] === connection) {
+    //     const [toClose] = this.connections.splice(i, 1)
+    //     toClose.destroy()
+    //     this.onDisconnection(toClose)
+    //   }
+    // }
   }
 
   connected (worker) {
@@ -86,7 +92,11 @@ class Connections {
   }
 
   destroy () {
-    while (this.connections.length) this.drop(this.connections[0])
+    while (this.connections.length) {
+      const con = this.connections.shift()
+      con.destroy()
+      this.onDisconnection(con)
+    }
   }
 }
 export default Connections

@@ -101,6 +101,7 @@ export class ManagerClient {
 
       this.socket.on('removenode', (data) => {
         data = decrypt(data)
+        console.log({ removenode:data})
         this.availableConnections.dropConnection(data)
         // console.log(availableConnections)
       })
@@ -120,14 +121,16 @@ export class ManagerClient {
         this.log.debug('Attempting a reconnection')
       })
 
-      this.socket.on('disconnect', (reason) => {
+      this.socket.on('close', (reason) => {
         this.log.warn(new Error(`disconnect - ${reason}`))
         if (!port) {
           setTimeout(() => {
             this.discover()
           }, 2000)
         } else {
-          this.socket.connect()
+          setTimeout(() => {
+            this.socket.connect()
+          }, 2000)
         }
       })
     } catch (e) {

@@ -71,6 +71,7 @@ class AvailableConnections {
 
   dropConnection ({ worker, variant }) {
     if (this.availableConnections[worker] && this.availableConnections[worker][variant]) {
+      console.log(`Dropping ${worker} ${variant}`)
       this.availableConnections[worker][variant].off()
       this.availableConnections[worker][variant].disconnect()
       this.events.drop(this.availableConnections[worker][variant])
