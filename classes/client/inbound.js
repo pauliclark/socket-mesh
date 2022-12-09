@@ -11,7 +11,8 @@ class InboundClient {
     schema,
     log = console
   }) {
-    this.remoteWorker = worker
+    this.worker = worker
+    this.localWorker = localWorker
     this.variant = variant
     this.methods = methods
     this.connection = connection

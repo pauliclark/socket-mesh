@@ -85,10 +85,8 @@ class Connections {
   }
 
   connected (worker) {
-    // console.log(`Finding ${worker} connected to ${this.worker}`)
-    const clients = [...this.clients, ...this.connections]
-    // console.log(clients)
-    return [...clients.filter(client => client.worker === worker).map(client => client.client || client.connection || client)]
+    const clients = [...this.clients, ...this.connections].map(client => client.client || client.connection || client)
+    return [...clients.filter(client => client.worker === worker)]
   }
 
   destroy () {

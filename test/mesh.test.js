@@ -66,9 +66,9 @@ afterEach(() => {
 })
 afterAll(() => {
   // const firstNode = nodes.nodeA[0]
-  nodes.nodeA[0].destroy()
-  nodes.nodeB[1].destroy()
-  nodes.nodeB[0].destroy()
+  if (nodes.nodeA[0]) nodes.nodeA[0].destroy()
+  if (nodes.nodeB[1]) nodes.nodeB[1].destroy()
+  if (nodes.nodeB[0]) nodes.nodeB[0].destroy()
   nodes.centralNode.destroy()
   delete nodes.nodeA[0]
   delete nodes.nodeB[1]
