@@ -17,6 +17,7 @@ class SocketNode {
     managerIp = 'http://127.0.0.1',
     hostname,
     ip,
+    variant = null,
     port,
     schema,
     meshPort,
@@ -32,7 +33,7 @@ class SocketNode {
 
     this.jest = jest
     this.worker = worker
-    this.variant = null
+    this.variant = variant
     this.schema = new Schema(schema, this.log)
     // console.log({ worker, hostname, managerIp })
     this.managerIp = managerIp
@@ -78,7 +79,7 @@ class SocketNode {
       // privateKey: this.privateKey,
       // availableConnections: this.availableConnections,
       onConnected: ({ worker, clientId }) => {
-        this.variant = clientId
+        this.variant = this.variant || clientId
         // this.log.debug({worker, clientId})
         // console.log('client connected')
         this.onConnected()
