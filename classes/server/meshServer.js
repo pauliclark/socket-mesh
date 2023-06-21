@@ -70,6 +70,7 @@ class MeshServer {
   }
 
   allow ({ worker, variant }) {
+    // console.log({ worker: this.worker, variant: this.variant, allow: { worker, variant, allow: this.schema.allow(worker, this.worker) && variant !== this.variant } })
     return this.schema.allow(worker, this.worker) && variant !== this.variant
   }
 

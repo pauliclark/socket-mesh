@@ -88,6 +88,7 @@ class Connections {
 
   connected (worker) {
     const clients = [...this.clients, ...this.connections].map(client => client.client || client.connection || client)
+    // console.log({ clients, worker })
     return [...clients.filter(client => client.worker === worker)]
   }
 

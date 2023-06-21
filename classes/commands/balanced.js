@@ -10,12 +10,15 @@ class Balanced {
   }
 
   call (data = {}) {
+    // console.log({ data })
     if (this.responds) return this.callPromise(data)
     const connections = this.socketNode.connections.connected(this.worker)
+    // console.log({ cons: connections.length })
     if (connections.length === 1) {
       // if only one worker connected
       const connection = connections.shift()
       connection.command(this.command, data)
+      // console.log({ variant: connection.variant })
       this.workerCallHistory.push(connection.variant)
     } else if (connections.length > 1) {
       const notCalled = connections.filter(connection => !this.workerCallHistory.includes(connection.variant))

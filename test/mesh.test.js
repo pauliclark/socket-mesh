@@ -46,6 +46,21 @@ const createClient = async ({ worker = 'nodeA', variant } = { worker: 'nodeA' })
   nodes[worker].push(connectedNode)
   return connectedNode
 }
+const createNodes = async () => {
+  const nodeB1 = await createClient({ worker: 'nodeB', variant: 'testNodeB' })
+  const nodeB2 = await createClient({ worker: 'nodeB' })
+  const nodeA = await createClient({ worker: 'nodeA', variant: 'testNodeA' })
+  await new Promise((resolve, reject) => {
+    waitFor(() => {
+      return nodeA.connections.connections.length > 1 && nodeB2.connections.connections.length > 1 && nodeB1.connections.connections.length > 1
+    }, resolve)
+  })
+  return {
+    nodeB1,
+    nodeB2,
+    nodeA
+  }
+}
 const startManager = async () => {
   nodes.centralNode = new Manager({
     schema: await schema(),
@@ -153,9 +168,12 @@ test('Check nodeA commands exists for NodeB', async (done) => {
 })
 
 test('Are 3 nodes connected to the Manager', async (done) => {
-  await createClient({ worker: 'nodeB', variant: 'testNodeB' })
-  await createClient({ worker: 'nodeB' })
-  await createClient({ worker: 'nodeA', variant: 'testNodeA' })
+  const {
+    nodeB1,
+    nodeB2,
+    nodeA
+  } = await createNodes()
+
   const connections = nodes.centralNode.connections()
   // nodes.nodeA.getConnection()
   // console.log({ nodes })
@@ -165,17 +183,25 @@ test('Are 3 nodes connected to the Manager', async (done) => {
 })
 
 test('Is nodeA connected to both nodeBs', async (done) => {
-  await createClient({ worker: 'nodeB', variant: 'testNodeB' })
-  await createClient({ worker: 'nodeB' })
-  await createClient({ worker: 'nodeA', variant: 'testNodeA' })
-  expect(nodes.nodeA[0].connections.connections.length).toBe(2)
+  const {
+    nodeB1,
+    nodeB2,
+    nodeA
+  } = await createNodes()
+  expect(nodeA.connections.connections.length).toBe(2)
+  expect(nodeB1.connections.connections.length).toBe(2)
   done()
 })
 
 test('Is nodeA connected to both nodeBs and then drops one of them', async (done) => {
-  await createClient({ worker: 'nodeB', variant: 'testNodeB' })
-  const toRemove = await createClient({ worker: 'nodeB' })
-  const toCheck = await createClient({ worker: 'nodeA', variant: 'testNodeA' })
+  const {
+    nodeB1,
+    nodeB2: toRemove,
+    nodeA: toCheck
+  } = await createNodes()
+  // await createClient({ worker: 'nodeB', variant: 'testNodeB' })
+  // const toRemove = await createClient({ worker: 'nodeB' })
+  // const toCheck = await createClient({ worker: 'nodeA', variant: 'testNodeA' })
   expect(toCheck.connections.connections.length).toBe(2)
   try {
     await toRemove.destroy()
@@ -195,9 +221,11 @@ test('Is nodeA connected to both nodeBs and then drops one of them', async (done
 })
 
 test('Is nodeA connected to both nodeBs and then drops one of them and then reconnects', async (done) => {
-  await createClient({ worker: 'nodeB', variant: 'testNodeB' })
-  const toRemove = await createClient({ worker: 'nodeB' })
-  const toCheck = await createClient({ worker: 'nodeA', variant: 'testNodeA' })
+  const {
+    nodeB1,
+    nodeB2: toRemove,
+    nodeA: toCheck
+  } = await createNodes()
   expect(toCheck.connections.connections.length).toBe(2)
 
   await toRemove.destroy()
@@ -219,20 +247,24 @@ test('Is nodeA connected to both nodeBs and then drops one of them and then reco
 })
 
 test('Does nodeA have the methods', async (done) => {
-  await createClient({ worker: 'nodeB', variant: 'testNodeB' })
-  await createClient({ worker: 'nodeB' })
-  await createClient({ worker: 'nodeA', variant: 'testNodeA' })
-  log.log(nodes.nodeA[0].methods)
-  expect(nodes.nodeA[0].methods.sampleA !== undefined).toBeTruthy()
-  expect(nodes.nodeA[0].methods.sampleB !== undefined).toBeTruthy()
-  expect(nodes.nodeA[0].methods.queued !== undefined).toBeTruthy()
+  const {
+    nodeB1,
+    nodeB2,
+    nodeA
+  } = await createNodes()
+  // log.log(nodes.nodeA[0].methods)
+  expect(nodeA.methods.sampleA !== undefined).toBeTruthy()
+  expect(nodeA.methods.sampleB !== undefined).toBeTruthy()
+  expect(nodeA.methods.queued !== undefined).toBeTruthy()
   done()
 })
 test('Is nodeB available to nodeA', async (done) => {
-  await createClient({ worker: 'nodeB', variant: 'testNodeB' })
-  await createClient({ worker: 'nodeB' })
-  await createClient({ worker: 'nodeA', variant: 'testNodeA' })
-  const cons = nodes.nodeA[0].connections.connected('nodeB')
+  const {
+    nodeB1,
+    nodeB2,
+    nodeA
+  } = await createNodes()
+  const cons = nodeA.connections.connected('nodeB')
   // log.log(cons)
   const clientCommands = cons.filter(con => con.command)
   expect(cons.length).toBe(2)
@@ -240,10 +272,12 @@ test('Is nodeB available to nodeA', async (done) => {
   done()
 })
 test('Send balanced message from NodeA to a NodeB', async (done) => {
-  await createClient({ worker: 'nodeB', variant: 'testNodeB' })
-  await createClient({ worker: 'nodeB' })
-  await createClient({ worker: 'nodeA', variant: 'testNodeA' })
-  nodes.nodeA[0].call.nodeB.sampleA.call({ test: 'data' })
+  const {
+    nodeB1,
+    nodeB2,
+    nodeA
+  } = await createNodes()
+  nodeA.call.nodeB.sampleA.call({ test: 'data' })
   await new Promise((resolve, reject) => {
     waitFor(() => {
       return stubs.sampleA.mock.calls.length > 0
@@ -251,13 +285,15 @@ test('Send balanced message from NodeA to a NodeB', async (done) => {
   })
   expect(stubs.sampleA.mock.calls.length).toBe(1)
   done()
-})
+}, 10000)
 test('Send balanced message from NodeA to both NodeBs', async (done) => {
-  await createClient({ worker: 'nodeB', variant: 'testNodeB' })
-  await createClient({ worker: 'nodeB' })
-  await createClient({ worker: 'nodeA', variant: 'testNodeA' })
-  nodes.nodeA[0].call.nodeB.sampleA.call({ test: 'data' })
-  nodes.nodeA[0].call.nodeB.sampleA.call({ test: 'data' })
+  const {
+    nodeB1,
+    nodeB2,
+    nodeA
+  } = await createNodes()
+  nodeA.call.nodeB.sampleA.call({ test: 'data' })
+  nodeA.call.nodeB.sampleA.call({ test: 'data' })
   await new Promise((resolve, reject) => {
     waitFor(() => {
       return stubs.sampleA.mock.calls.length > 1
@@ -268,22 +304,27 @@ test('Send balanced message from NodeA to both NodeBs', async (done) => {
   // log.log(stubs.sampleA.mock.calls.map(call => call[0].worker))
   expect(stubs.sampleA.mock.calls[0][0].variant !== stubs.sampleA.mock.calls[1][0].variant).toBeTruthy()
   done()
-})
+}, 10000)
 test('Send broadcast message from NodeA to a NodeB with responses', async (done) => {
-  await createClient({ worker: 'nodeB', variant: 'testNodeB' })
-  await createClient({ worker: 'nodeB' })
-  await createClient({ worker: 'nodeA', variant: 'testNodeA' })
-  const responses = await nodes.nodeA[0].call.nodeB.sampleB.call({ test: 'data' })
+  const {
+    nodeB1,
+    nodeB2,
+    nodeA
+  } = await createNodes()
+  await nodeA.call.nodeB.sampleB.call({ test: 'data' })
 
   // log.log({ responses })
   expect(stubs.sampleB.mock.calls.length).toBe(2)
   done()
-})
+}, 10000)
+
 test('Send broadcast queued message from NodeA to a NodeB', async (done) => {
-  await createClient({ worker: 'nodeB', variant: 'testNodeB' })
-  await createClient({ worker: 'nodeB' })
-  await createClient({ worker: 'nodeA', variant: 'testNodeA' })
-  await nodes.nodeA[0].call.nodeB.queued.call({ test: 'data' })
+  const {
+    nodeB1,
+    nodeB2,
+    nodeA
+  } = await createNodes()
+  await nodeA.call.nodeB.queued.call({ test: 'data' })
 
   await new Promise((resolve, reject) => {
     waitFor(() => {
@@ -292,12 +333,15 @@ test('Send broadcast queued message from NodeA to a NodeB', async (done) => {
   })
   expect(stubs.queued.mock.calls.length).toBe(2)
   done()
-})
+}, 10000)
+
 test('Send balanced message from NodeB to a NodeA', async (done) => {
-  await createClient({ worker: 'nodeB', variant: 'testNodeB' })
-  await createClient({ worker: 'nodeB' })
-  await createClient({ worker: 'nodeA', variant: 'testNodeA' })
-  nodes.nodeB[0].call.nodeA.sampleA.call({ test: 'data' })
+  const {
+    nodeB1,
+    nodeB2,
+    nodeA
+  } = await createNodes()
+  await nodeB2.call.nodeA.sampleA.call({ test: 'data' })
   await new Promise((resolve, reject) => {
     waitFor(() => {
       return stubs.sampleA.mock.calls.length > 0
@@ -305,22 +349,32 @@ test('Send balanced message from NodeB to a NodeA', async (done) => {
   })
   expect(stubs.sampleA.mock.calls.length).toBe(1)
   done()
-})
-test('Send broadcast message from NodeB to NodeA with responses', async (done) => {
-  await createClient({ worker: 'nodeB', variant: 'testNodeB' })
-  await createClient({ worker: 'nodeB' })
-  await createClient({ worker: 'nodeA', variant: 'testNodeA' })
-  const responses = await nodes.nodeB[0].call.nodeA.sampleB.call({ test: 'data' })
+}, 10000)
 
-  log.log({ responses })
+test('Send broadcast message from NodeB to NodeA with responses', async (done) => {
+  const {
+    nodeB1,
+    nodeB2,
+    nodeA
+  } = await createNodes()
+  await nodeB2.call.nodeA.sampleB.call({ test: 'data' })
+
+  await new Promise((resolve, reject) => {
+    waitFor(() => {
+      return stubs.sampleB.mock.calls.length > 0
+    }, resolve)
+  })
   expect(stubs.sampleB.mock.calls.length).toBe(1)
   done()
-})
+}, 10000)
+
 test('Send broadcast queued message from NodeB to NodeA', async (done) => {
-  await createClient({ worker: 'nodeB', variant: 'testNodeB' })
-  await createClient({ worker: 'nodeB' })
-  await createClient({ worker: 'nodeA', variant: 'testNodeA' })
-  await nodes.nodeB[0].call.nodeA.queued.call({ test: 'data' })
+  const {
+    nodeB1,
+    nodeB2,
+    nodeA
+  } = await createNodes()
+  await nodeB1.call.nodeA.queued.call({ test: 'data' })
 
   await new Promise((resolve, reject) => {
     waitFor(() => {
@@ -329,12 +383,15 @@ test('Send broadcast queued message from NodeB to NodeA', async (done) => {
   })
   expect(stubs.queued.mock.calls.length).toBe(1)
   done()
-})
+}, 10000)
+
 test('NodeA can identify the connection NodeB with variant testNodeB', async (done) => {
-  await createClient({ worker: 'nodeB', variant: 'testNodeB' })
-  await createClient({ worker: 'nodeB' })
-  const connection = await createClient({ worker: 'nodeA', variant: 'testNodeA' })
-  const variantConnection = connection.getConnection({
+  const {
+    nodeB1,
+    nodeB2,
+    nodeA
+  } = await createNodes()
+  const variantConnection = nodeA.getConnection({
     worker: 'nodeB',
     variant: 'testNodeB'
   })

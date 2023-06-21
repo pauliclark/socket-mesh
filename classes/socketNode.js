@@ -7,6 +7,7 @@ import Connections from './containers/connections.js'
 import AvailableConnections from './containers/availableConnections.js'
 import { contextLog } from '@pauliclark/log-context'
 import { initialiseQueue } from './containers/queues.js'
+import { v4 as uuidv4 } from 'uuid'
 class SocketNode {
   constructor ({
     jest = false,
@@ -33,7 +34,7 @@ class SocketNode {
 
     this.jest = jest
     this.worker = worker
-    this.variant = variant
+    this.variant = variant || uuidv4().toString('utf8')
     this.schema = new Schema(schema, this.log)
     // console.log({ worker, hostname, managerIp })
     this.managerIp = managerIp
@@ -80,7 +81,6 @@ class SocketNode {
       onConnected: ({ worker, clientId }) => {
         this.variant = this.variant || clientId
         // this.log.debug({worker, clientId})
-        // console.log('client connected')
         this.onConnected()
 
         this.connections = new Connections({
@@ -113,6 +113,7 @@ class SocketNode {
         availableConnections: this.managerClient.availableConnections
         // connections: this.connections
       })
+      // console.log('meshServer started', this.meshServer.variant)
     } catch (e) {
       console.error(e)
     }
