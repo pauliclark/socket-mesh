@@ -19,6 +19,7 @@ class InboundClient {
     this.connections = connections
     this.commands = schema.getCommands(localWorker)
     this.log = log
+    connection.clientWrapper = this
     const { commandResponse, command } = socketMethods(connection, methods, this.commands, { log: this.log, connections: this.connections })
     this.commandResponse = commandResponse
     this.command = command

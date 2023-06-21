@@ -11,6 +11,7 @@ export class ManagerClient {
     managerIp,
     ip = 'http://127.0.0.1',
     worker = 'unnamed',
+    variant,
     hostname,
     port,
     publicKey,
@@ -26,6 +27,7 @@ export class ManagerClient {
     this.managerIp = managerIp
     this.remoteIP = ip
     this.hostname = hostname
+    this.variant = variant
     setSecret(privateKey)
     this.meshPort = meshPort
     this.onConnected = onConnected
@@ -101,7 +103,6 @@ export class ManagerClient {
 
       this.socket.on('removenode', (data) => {
         data = decrypt(data)
-        console.log({ removenode:data})
         this.availableConnections.dropConnection(data)
         // console.log(availableConnections)
       })
@@ -143,7 +144,9 @@ export class ManagerClient {
     this.socket.on('declared', data => {
       this.declared(decrypt(data))
     })
-    this.socket.emit('declare', encrypt({ worker: this.worker, port: this.meshPort, hostname: this.hostname }))
+    const declareData = { worker: this.worker, port: this.meshPort, hostname: this.hostname, variant: this.variant }
+    // console.log({ declareData })
+    this.socket.emit('declare', encrypt(declareData))
   }
 
   declared ({ worker, clientId }) {

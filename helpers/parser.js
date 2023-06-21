@@ -10,6 +10,6 @@ export const encrypt = data => {
   return cryptr.encrypt(data)
 }
 export const decrypt = data => {
-  // console.log({decrypt:data})
+  // console.log({ decrypt: cryptr.decrypt(data.toString('utf8')) })
   return JSON.parse(cryptr.decrypt(data.toString('utf8')))
 }

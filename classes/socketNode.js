@@ -64,7 +64,6 @@ class SocketNode {
 
   async connectToManager () {
     // Notify the manager that I am listening
-    // console.log(this)
     // return
     this.managerClient = new ManagerClient({
       ...this,
@@ -136,6 +135,10 @@ class SocketNode {
 
   createMethods () {
     this.methods = this.schema.getMethods(this)
+  }
+
+  getConnection ({ worker, variant }) {
+    return this.connections.getConnection({ worker, variant })
   }
 }
 export default SocketNode

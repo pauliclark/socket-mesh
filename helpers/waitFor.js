@@ -2,13 +2,13 @@ export const waitFor = (
   check = () => true,
   complete = () => {},
   {
-    timeout=3000,
-    interval=200, 
-    timedout=() => {}
-  }={
-    timeout:3000,
-    interval:200, 
-    timedout:() => {}
+    timeout = 3000,
+    interval = 200,
+    timedout = () => {}
+  } = {
+    timeout: 3000,
+    interval: 200,
+    timedout: () => {}
   }) => {
   let timingOut
   let timer

@@ -14,9 +14,14 @@ Object.keys(stubs).forEach(stub => {
   stubs[stub] = jest.fn()
 })
 
-const createClient = async ({ worker = 'nodeA' } = { worker: 'nodeA' }) => {
+const nodes = {
+  nodeB: [],
+  nodeA: [],
+  centralNode: null
+}
+const createClient = async ({ worker = 'nodeA', variant } = { worker: 'nodeA' }) => {
   const workerSchema = await schema(worker)
-  return new Promise((resolve) => {
+  const connectedNode = await new Promise((resolve) => {
     const node = new SocketNode({
       // redis: {
       //   host: '127.0.0.1',
@@ -25,6 +30,7 @@ const createClient = async ({ worker = 'nodeA' } = { worker: 'nodeA' }) => {
       logLevel: levels.ERROR,
       jest: true,
       worker,
+      variant,
       schema: workerSchema,
       publicKey,
       privateKey,
@@ -36,11 +42,9 @@ const createClient = async ({ worker = 'nodeA' } = { worker: 'nodeA' }) => {
 
     })
   })
-}
-const nodes = {
-  nodeB: [],
-  nodeA: [],
-  centralNode: null
+  if (!nodes[worker]) nodes[worker] = []
+  nodes[worker].push(connectedNode)
+  return connectedNode
 }
 const startManager = async () => {
   nodes.centralNode = new Manager({
@@ -62,23 +66,24 @@ beforeAll(async (done) => {
   done()
 })
 afterEach(() => {
+  while (nodes.nodeA.length) {
+    const node = nodes.nodeA.shift()
+    node.destroy()
+  }
+  while (nodes.nodeB.length) {
+    const node = nodes.nodeB.shift()
+    node.destroy()
+  }
   jest.clearAllMocks()
 })
 afterAll(() => {
   // const firstNode = nodes.nodeA[0]
-  if (nodes.nodeA[0]) nodes.nodeA[0].destroy()
-  if (nodes.nodeB[1]) nodes.nodeB[1].destroy()
-  if (nodes.nodeB[0]) nodes.nodeB[0].destroy()
   nodes.centralNode.destroy()
-  delete nodes.nodeA[0]
-  delete nodes.nodeB[1]
-  delete nodes.nodeB[0]
   delete nodes.centralNode
 })
 
-test('Create a nodeB worker that registers on the manager', async (done) => {
+test('Create a nodeB worker that listens', async (done) => {
   const connection = await createClient({ worker: 'nodeB' })
-  nodes.nodeB.push(connection)
   // await new Promise((resolve, reject) => {
   //   waitFor(() => {
   //     return !!(connection.meshServer && connection.meshServer.listening)
@@ -88,10 +93,25 @@ test('Create a nodeB worker that registers on the manager', async (done) => {
   expect(connection.meshServer.listening).toBeTruthy()
   done()
 })
+test('Create a nodeB worker that registers on the manager with Variant', async (done) => {
+  const variant = 'testNodeB'
+  const connection = await createClient({ worker: 'nodeB', variant })
+  // await new Promise((resolve, reject) => {
+  //   waitFor(() => {
+  //     return !!(connection.meshServer && connection.meshServer.listening)
+  //   }, resolve)
+  // })
+  const connections = nodes.centralNode.connections()
+  const variants = Object.keys(connections.nodeB).map(client => connections.nodeB[client].variant)
+  expect(variants.includes(variant)).toBeTruthy()
+  log.log(connection.meshServer.connections.connections.map(con => con.variant))
+  expect(connection.meshServer.listening).toBeTruthy()
+  done()
+})
 
 test('Create a nodeA worker that registers on the manager and connects to NodeB', async (done) => {
-  const connection = await createClient({ worker: 'nodeA' })
-  nodes.nodeA.push(connection)
+  await createClient({ worker: 'nodeB', variant: 'testNodeB' })
+  const connection = await createClient({ worker: 'nodeA', variant: 'testNodeA' })
   // await new Promise((resolve, reject) => {
   //   waitFor(() => {
   //     return !!(connection.meshServer && connection.meshServer.listening && connection.meshServer.connections.connections.length > 0)
@@ -102,9 +122,10 @@ test('Create a nodeA worker that registers on the manager and connects to NodeB'
   done()
 })
 
-test('Create a nodeB worker that registers on the manager', async (done) => {
+test('Create a nodeB worker that registers on the manager and connects to another nodeB', async (done) => {
+  await createClient({ worker: 'nodeB' })
   const connection = await createClient({ worker: 'nodeB' })
-  nodes.nodeB.push(connection)
+
   await new Promise((resolve, reject) => {
     waitFor(() => {
       return connection.meshServer.connections.connections.length > 0
@@ -116,7 +137,8 @@ test('Create a nodeB worker that registers on the manager', async (done) => {
 })
 
 test('Check nodeA commands exists for NodeB', async (done) => {
-  // nodes.nodeA[0].call.nodeB.sampleA({ test: 'data' })
+  await createClient({ worker: 'nodeB', variant: 'testNodeB' })
+  await createClient({ worker: 'nodeA', variant: 'testNodeA' })
 
   await new Promise((resolve, reject) => {
     waitFor(() => {
@@ -131,18 +153,75 @@ test('Check nodeA commands exists for NodeB', async (done) => {
 })
 
 test('Are 3 nodes connected to the Manager', async (done) => {
+  await createClient({ worker: 'nodeB', variant: 'testNodeB' })
+  await createClient({ worker: 'nodeB' })
+  await createClient({ worker: 'nodeA', variant: 'testNodeA' })
   const connections = nodes.centralNode.connections()
+  // nodes.nodeA.getConnection()
+  // console.log({ nodes })
   expect(Object.keys(connections.nodeB).length).toBe(2)
   expect(Object.keys(connections.nodeA).length).toBe(1)
   done()
 })
 
 test('Is nodeA connected to both nodeBs', async (done) => {
+  await createClient({ worker: 'nodeB', variant: 'testNodeB' })
+  await createClient({ worker: 'nodeB' })
+  await createClient({ worker: 'nodeA', variant: 'testNodeA' })
   expect(nodes.nodeA[0].connections.connections.length).toBe(2)
   done()
 })
 
+test('Is nodeA connected to both nodeBs and then drops one of them', async (done) => {
+  await createClient({ worker: 'nodeB', variant: 'testNodeB' })
+  const toRemove = await createClient({ worker: 'nodeB' })
+  const toCheck = await createClient({ worker: 'nodeA', variant: 'testNodeA' })
+  expect(toCheck.connections.connections.length).toBe(2)
+  try {
+    await toRemove.destroy()
+  } catch (e) {
+    console.error(e)
+  }
+  nodes.nodeB = nodes.nodeB.filter(n => n !== toRemove)
+
+  await new Promise((resolve, reject) => {
+    waitFor(() => {
+      return toCheck.connections.connections.length < 2
+    }, resolve)
+  })
+
+  expect(toCheck.connections.connections.length).toBe(1)
+  done()
+})
+
+test('Is nodeA connected to both nodeBs and then drops one of them and then reconnects', async (done) => {
+  await createClient({ worker: 'nodeB', variant: 'testNodeB' })
+  const toRemove = await createClient({ worker: 'nodeB' })
+  const toCheck = await createClient({ worker: 'nodeA', variant: 'testNodeA' })
+  expect(toCheck.connections.connections.length).toBe(2)
+
+  await toRemove.destroy()
+
+  nodes.nodeB = nodes.nodeB.filter(n => n !== toRemove)
+
+  await new Promise((resolve, reject) => {
+    waitFor(() => {
+      return toCheck.connections.connections.length < 2
+    }, resolve)
+  })
+
+  expect(toCheck.connections.connections.length).toBe(1)
+
+  await createClient({ worker: 'nodeB' })
+  expect(toCheck.connections.connections.length).toBe(2)
+
+  done()
+})
+
 test('Does nodeA have the methods', async (done) => {
+  await createClient({ worker: 'nodeB', variant: 'testNodeB' })
+  await createClient({ worker: 'nodeB' })
+  await createClient({ worker: 'nodeA', variant: 'testNodeA' })
   log.log(nodes.nodeA[0].methods)
   expect(nodes.nodeA[0].methods.sampleA !== undefined).toBeTruthy()
   expect(nodes.nodeA[0].methods.sampleB !== undefined).toBeTruthy()
@@ -150,6 +229,9 @@ test('Does nodeA have the methods', async (done) => {
   done()
 })
 test('Is nodeB available to nodeA', async (done) => {
+  await createClient({ worker: 'nodeB', variant: 'testNodeB' })
+  await createClient({ worker: 'nodeB' })
+  await createClient({ worker: 'nodeA', variant: 'testNodeA' })
   const cons = nodes.nodeA[0].connections.connected('nodeB')
   // log.log(cons)
   const clientCommands = cons.filter(con => con.command)
@@ -158,6 +240,9 @@ test('Is nodeB available to nodeA', async (done) => {
   done()
 })
 test('Send balanced message from NodeA to a NodeB', async (done) => {
+  await createClient({ worker: 'nodeB', variant: 'testNodeB' })
+  await createClient({ worker: 'nodeB' })
+  await createClient({ worker: 'nodeA', variant: 'testNodeA' })
   nodes.nodeA[0].call.nodeB.sampleA.call({ test: 'data' })
   await new Promise((resolve, reject) => {
     waitFor(() => {
@@ -168,6 +253,9 @@ test('Send balanced message from NodeA to a NodeB', async (done) => {
   done()
 })
 test('Send balanced message from NodeA to both NodeBs', async (done) => {
+  await createClient({ worker: 'nodeB', variant: 'testNodeB' })
+  await createClient({ worker: 'nodeB' })
+  await createClient({ worker: 'nodeA', variant: 'testNodeA' })
   nodes.nodeA[0].call.nodeB.sampleA.call({ test: 'data' })
   nodes.nodeA[0].call.nodeB.sampleA.call({ test: 'data' })
   await new Promise((resolve, reject) => {
@@ -182,6 +270,9 @@ test('Send balanced message from NodeA to both NodeBs', async (done) => {
   done()
 })
 test('Send broadcast message from NodeA to a NodeB with responses', async (done) => {
+  await createClient({ worker: 'nodeB', variant: 'testNodeB' })
+  await createClient({ worker: 'nodeB' })
+  await createClient({ worker: 'nodeA', variant: 'testNodeA' })
   const responses = await nodes.nodeA[0].call.nodeB.sampleB.call({ test: 'data' })
 
   // log.log({ responses })
@@ -189,6 +280,9 @@ test('Send broadcast message from NodeA to a NodeB with responses', async (done)
   done()
 })
 test('Send broadcast queued message from NodeA to a NodeB', async (done) => {
+  await createClient({ worker: 'nodeB', variant: 'testNodeB' })
+  await createClient({ worker: 'nodeB' })
+  await createClient({ worker: 'nodeA', variant: 'testNodeA' })
   await nodes.nodeA[0].call.nodeB.queued.call({ test: 'data' })
 
   await new Promise((resolve, reject) => {
@@ -200,6 +294,9 @@ test('Send broadcast queued message from NodeA to a NodeB', async (done) => {
   done()
 })
 test('Send balanced message from NodeB to a NodeA', async (done) => {
+  await createClient({ worker: 'nodeB', variant: 'testNodeB' })
+  await createClient({ worker: 'nodeB' })
+  await createClient({ worker: 'nodeA', variant: 'testNodeA' })
   nodes.nodeB[0].call.nodeA.sampleA.call({ test: 'data' })
   await new Promise((resolve, reject) => {
     waitFor(() => {
@@ -210,6 +307,9 @@ test('Send balanced message from NodeB to a NodeA', async (done) => {
   done()
 })
 test('Send broadcast message from NodeB to NodeA with responses', async (done) => {
+  await createClient({ worker: 'nodeB', variant: 'testNodeB' })
+  await createClient({ worker: 'nodeB' })
+  await createClient({ worker: 'nodeA', variant: 'testNodeA' })
   const responses = await nodes.nodeB[0].call.nodeA.sampleB.call({ test: 'data' })
 
   log.log({ responses })
@@ -217,6 +317,9 @@ test('Send broadcast message from NodeB to NodeA with responses', async (done) =
   done()
 })
 test('Send broadcast queued message from NodeB to NodeA', async (done) => {
+  await createClient({ worker: 'nodeB', variant: 'testNodeB' })
+  await createClient({ worker: 'nodeB' })
+  await createClient({ worker: 'nodeA', variant: 'testNodeA' })
   await nodes.nodeB[0].call.nodeA.queued.call({ test: 'data' })
 
   await new Promise((resolve, reject) => {
@@ -225,5 +328,16 @@ test('Send broadcast queued message from NodeB to NodeA', async (done) => {
     }, resolve)
   })
   expect(stubs.queued.mock.calls.length).toBe(1)
+  done()
+})
+test('NodeA can identify the connection NodeB with variant testNodeB', async (done) => {
+  await createClient({ worker: 'nodeB', variant: 'testNodeB' })
+  await createClient({ worker: 'nodeB' })
+  const connection = await createClient({ worker: 'nodeA', variant: 'testNodeA' })
+  const variantConnection = connection.getConnection({
+    worker: 'nodeB',
+    variant: 'testNodeB'
+  })
+  expect(variantConnection.variant === 'testNodeB').toBeTruthy()
   done()
 })

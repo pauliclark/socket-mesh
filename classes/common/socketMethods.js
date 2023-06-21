@@ -7,7 +7,8 @@ import {
 
 const socketMethods = (socket, methods, commands, { log = console, connections } = {}) => {
   socket.on('connect_error', (error) => {
-    log.error(error)
+    // console.log(socket)
+    log.error(error.message)
   })
   socket.on('reconnect', (attemptNumber) => {
     log.info({ attemptNumber })
@@ -76,7 +77,7 @@ const socketMethods = (socket, methods, commands, { log = console, connections }
   })
 
   const commandResponse = (command, data) => {
-    const { uid, promise } = emitPromise({socket,command})
+    const { uid, promise } = emitPromise({ socket, command })
     // log.log(`Emitting ${command} from server and awaiting response`, data)
     socket.emit('command', encrypt({
       uid,

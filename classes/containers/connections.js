@@ -44,13 +44,14 @@ class Connections {
     })
   }
 
-  dropClient (connection) {
-    for (let i = this.clients.length - 1; i >= 0; i--) {
-      if (this.clients[i].connection === connection) {
-        this.clients.splice(i, 1)
-        connection.destroy()
-      }
-    }
+  dropClient (socket) {
+    this.log.log('Dropping client')
+    const toDrop = this.clients.find(client => client.connection.connection === socket)
+
+    this.clients = this.clients.filter(client => client !== toDrop)
+    // toDrop.connection.destroy()
+    // console.log(connection)
+    // connection.destroy()
   }
 
   list () {
@@ -71,6 +72,7 @@ class Connections {
   drop (connection) {
     const toClose = this.connections.find(c => c === connection)
     if (toClose) {
+      this.log.log('Dropping connection')
       toClose.destroy()
       this.connections = this.connections.filter(con => con !== toClose)
       this.onDisconnection(toClose)
@@ -95,6 +97,11 @@ class Connections {
       con.destroy()
       this.onDisconnection(con)
     }
+  }
+
+  getConnection ({ worker, variant }) {
+    const cons = this.connected(worker)
+    return cons.find(con => con.variant === variant)
   }
 }
 export default Connections

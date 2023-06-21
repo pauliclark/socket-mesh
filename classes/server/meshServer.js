@@ -34,7 +34,7 @@ class MeshServer {
 
   start () {
     const httpserver = createServer()
-    try{
+    try {
       this.server = new Server(httpserver, { port: this.port })
       this.log.log(`${this.worker} Mesh server listening on ${this.port}`)
 
@@ -45,7 +45,15 @@ class MeshServer {
           data = decrypt(data)
           if (this.allow(data)) {
             this.log.log(`declared as ${data.worker}[${data.variant}]`)
-            this.connections.addClient(data, new InboundClient({ ...data, localWorker: this.worker, methods: this.methods, schema: this.schema, connection, connections: this.connections, log: this.log }))
+            this.connections.addClient(data, new InboundClient({
+              ...data,
+              localWorker: this.worker,
+              methods: this.methods,
+              schema: this.schema,
+              connection,
+              connections: this.connections,
+              log: this.log
+            }))
           } else {
             connection.disconnect()
           }
@@ -57,7 +65,7 @@ class MeshServer {
       this.log.error(`${this.worker} failed to start the Mesh server listening on ${this.port},  will try again in 1s`)
       setTimeout(() => {
         this.start()
-      },1000)
+      }, 1000)
     }
   }
 
