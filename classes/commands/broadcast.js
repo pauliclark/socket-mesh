@@ -34,7 +34,6 @@ class Broadcast {
     const { only = [], exclude = [] } = options
     const connections = this.socketNode.connections.connected(this.worker)
     // this.log.info(`Calling broadcast command promise ${this.command} to all connected ${this.worker} workers`)
-    console.log({ options })
     const toCall = connections.filter(connection => {
       return connection.worker && connection.variant && (
         only.length
