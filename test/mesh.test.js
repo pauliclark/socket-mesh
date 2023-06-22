@@ -398,3 +398,42 @@ test('NodeA can identify the connection NodeB with variant testNodeB', async (do
   expect(variantConnection.variant === 'testNodeB').toBeTruthy()
   done()
 })
+
+test('NodeA can identify the connection NodeB with variant testNodeB and call targetB', async (done) => {
+  const {
+    nodeB1,
+    nodeB2,
+    nodeA
+  } = await createNodes()
+  const variantConnection = nodeA.getConnection({
+    worker: 'nodeB',
+    variant: 'testNodeB'
+  })
+
+  await nodeA.call.nodeB.queued.call({ test: 'data' }, { only: [variantConnection] })
+
+  await new Promise((resolve, reject) => {
+    waitFor(() => {
+      return stubs.queued.mock.calls.length > 0
+    }, resolve)
+  })
+  expect(stubs.queued.mock.calls.length).toBe(1)
+
+  done()
+})
+test('NodeA can identify the connection NodeB with variant testNodeB and call targetB with response', async (done) => {
+  const {
+    nodeB1,
+    nodeB2,
+    nodeA
+  } = await createNodes()
+  const variantConnection = nodeA.getConnection({
+    worker: 'nodeB',
+    variant: 'testNodeB'
+  })
+  const response = await nodeA.call.nodeB.sampleB.call({ test: 'data' }, { only: [variantConnection] })
+  expect(response.length).toBe(1)
+  expect(stubs.sampleB.mock.calls.length).toBe(1)
+
+  done()
+})
