@@ -241,6 +241,12 @@ test('Is nodeA connected to both nodeBs and then drops one of them and then reco
   expect(toCheck.connections.connections.length).toBe(1)
 
   await createClient({ worker: 'nodeB' })
+
+  await new Promise((resolve, reject) => {
+    waitFor(() => {
+      return toCheck.connections.connections.length > 1
+    }, resolve)
+  })
   expect(toCheck.connections.connections.length).toBe(2)
 
   done()
@@ -266,6 +272,11 @@ test('Is nodeB available to nodeA', async (done) => {
   } = await createNodes()
   const cons = nodeA.connections.connected('nodeB')
   // log.log(cons)
+  await new Promise((resolve, reject) => {
+    waitFor(() => {
+      return nodeA.connections.connections.length > 1
+    }, resolve)
+  })
   const clientCommands = cons.filter(con => con.command)
   expect(cons.length).toBe(2)
   expect(cons.length === clientCommands.length).toBeTruthy()
