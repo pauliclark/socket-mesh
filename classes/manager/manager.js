@@ -62,9 +62,9 @@ export class Manager {
     Object.keys(connections).forEach(conWorker => {
       // console.log('allow check',worker, conWorker)
       if (this.schema.allow(worker, conWorker)) {
-        // console.log('allowed')
-        Object.keys(connections[conWorker]).forEach(conClientId => {
-          if (conClientId !== variant) {
+        // console.log('allowed')        
+        Object.values(connections[conWorker]).forEach(con => {
+          if (con.variant !== variant) {
             const con = connections[conWorker][conClientId]
             nodes.push({
               worker: con.worker,
